@@ -224,7 +224,47 @@
     .rb-admin{background:#ede9fe;color:#4c1d95;} .rb-cajero{background:var(--gold-light);color:#6b3e0a;}
     .u-actions{display:flex;gap:6px;margin-top:10px;}
 
-    /* ── MODAL ── */
+    /* ── KITCHEN ── */
+    .kitchen-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;}
+    .kitchen-header h1{font-size:20px;font-weight:800;color:var(--brown);letter-spacing:-.4px;margin:0;}
+    .k-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+    @media(max-width:700px){.k-cols{grid-template-columns:1fr;}}
+    .k-col-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;padding:8px 12px;border-radius:var(--r-sm) var(--r-sm) 0 0;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+    .k-col-title.ingresado{background:#FEF3C7;color:#92400E;}
+    .k-col-title.preparacion{background:#DBEAFE;color:#1E40AF;}
+    .k-col-title.finalizado{background:#D1FAE5;color:#065F46;}
+    .k-badge{background:rgba(0,0,0,.12);color:inherit;border-radius:99px;font-size:10px;padding:1px 7px;font-weight:800;}
+    .k-card{background:#fff;border:2px solid var(--border);border-radius:var(--r-md);padding:14px;margin-bottom:10px;position:relative;transition:border-color .2s;}
+    .k-card.ingresado{border-color:#F59E0B;animation:kPulse 2s infinite;}
+    .k-card.preparacion{border-color:#3B82F6;}
+    .k-card.finalizado{border-color:#10B981;opacity:.75;}
+    @keyframes kPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.4)}50%{box-shadow:0 0 0 6px rgba(245,158,11,0)}}
+    .k-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+    .k-order-num{font-size:13px;font-weight:800;color:var(--brown);}
+    .k-time{font-size:11px;color:#a08878;font-weight:600;}
+    .k-items{font-size:13px;color:#1a1a1a;line-height:1.7;margin-bottom:10px;}
+    .k-item-row{display:flex;gap:6px;}
+    .k-qty{font-weight:800;color:var(--brown);min-width:20px;}
+    .k-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+    .k-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;}
+    .k-tag.local{background:var(--gold-light);color:#6b3e0a;}
+    .k-tag.llevar{background:#fce7f3;color:#831843;}
+    .k-tag.cash{background:#EAF3DE;color:#2d6011;}
+    .k-tag.qr{background:#dbeafe;color:#1e40af;}
+    .k-comment{font-size:12px;color:#6b5744;background:var(--bg);border-radius:6px;padding:5px 8px;margin-bottom:10px;font-style:italic;}
+    .k-cashier{font-size:11px;color:#a08878;margin-bottom:10px;}
+    .btn-k{width:100%;padding:10px;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+    .btn-k.confirm{background:#F59E0B;color:#fff;}
+    .btn-k.confirm:active{background:#D97706;}
+    .btn-k.finish{background:#10B981;color:#fff;}
+    .btn-k.finish:active{background:#059669;}
+    .k-empty{text-align:center;padding:2rem 0;color:#b09a88;font-size:13px;font-weight:600;}
+    .k-empty i{font-size:28px;display:block;margin-bottom:6px;color:#c8bfb4;}
+    .notif-banner{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#F59E0B;color:#fff;padding:10px 20px;border-radius:99px;font-size:14px;font-weight:800;z-index:500;display:none;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:slideDown .3s ease;}
+    @keyframes slideDown{from{top:40px;opacity:0}to{top:60px;opacity:1}}
+    .k-refresh{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:transparent;font-size:12px;font-weight:700;color:#6b5744;cursor:pointer;}
+
+
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;z-index:200;}
     .modal-box{background:#fff;border-radius:var(--r-lg) var(--r-lg) 0 0;padding:1.5rem;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;}
     .modal-title{font-size:17px;font-weight:800;color:var(--brown);margin-bottom:1rem;}
@@ -404,6 +444,7 @@ INSERT INTO ac_products (name,category,price) VALUES
         <div class="order-desktop" id="deskOrder"></div>
         <div class="order-mobile" id="mobOrder"></div>
       </div>
+      <div class="page" id="pageKitchen"><div class="page-scroll" id="kitchenInner"></div></div>
       <div class="page" id="pageProducts"><div class="page-scroll" id="prodsInner"></div></div>
       <div class="page" id="pageSales"><div class="page-scroll" id="salesInner"></div></div>
       <div class="page" id="pageUsers"><div class="page-scroll" id="usersInner"></div></div>
@@ -576,7 +617,7 @@ function doLogout(){currentUser=null;cart=[];document.getElementById('appShell')
 //  NAV
 // ════════════════════════════════════════
 function navPages(){
-  const b=[{id:'order',icon:'ti-shopping-cart',label:'Orden'}];
+  const b=[{id:'order',icon:'ti-shopping-cart',label:'Orden'},{id:'kitchen',icon:'ti-chef-hat',label:'Cocina'}];
   if(currentUser.role==='admin')b.push({id:'products',icon:'ti-package',label:'Productos'},{id:'sales',icon:'ti-chart-bar',label:'Ventas'},{id:'users',icon:'ti-users',label:'Usuarios'});
   return b;
 }
@@ -590,7 +631,7 @@ function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page'+id.charAt(0).toUpperCase()+id.slice(1)).classList.add('active');
   buildNav();
-  ({order:renderOrder,products:renderProds,sales:renderSales,users:renderUsers})[id]();
+  ({order:renderOrder,kitchen:renderKitchen,products:renderProds,sales:renderSales,users:renderUsers})[id]();
 }
 
 // ════════════════════════════════════════
@@ -718,8 +759,12 @@ async function confirmOrder(){
   const comment=(document.getElementById('orderComment')||{value:''}).value;
   const tot=cTot(),now=new Date();
   const sale={date:now.toISOString().slice(0,10),time:now.toTimeString().slice(0,5),items:cart.map(i=>({name:i.name,qty:i.qty,price:i.price})),total:tot,payment:orderPayment,type:orderType,comment,cashier:currentUser.name};
+  const order={items:cart.map(i=>({name:i.name,qty:i.qty,price:i.price})),total:tot,payment:orderPayment,type:orderType,comment,cashier:currentUser.name,status:'ingresado'};
   showLoad('Guardando orden...');
-  try{await db.addSale(sale);}catch(e){sale.id=L.nSale++;L.sales.push(sale);saveL();}
+  try{
+    await db.addSale(sale);
+    if(useCloud){await sb.from('ac_orders').insert([order]);}
+  }catch(e){sale.id=L.nSale++;L.sales.push(sale);saveL();}
   hideLoad();cart=[];orderPayment='Efectivo';orderType='local';
   showToast(`<i class="ti ti-check" style="font-size:12px"></i> ¡Orden confirmada! Bs. ${tot}`);
   renderOrder();
@@ -956,7 +1001,169 @@ function showToast(msg){const t=document.getElementById('toast');t.innerHTML=msg
 // ════════════════════════════════════════
 //  PWA
 // ════════════════════════════════════════
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+//  KITCHEN
+// ════════════════════════════════════════
+let kitchenOrders=[];
+let kitchenPollTimer=null;
+let kitchenLastIds=new Set();
+let kitchenAudioCtx=null;
+
+function getAudioCtx(){
+  if(!kitchenAudioCtx) kitchenAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  return kitchenAudioCtx;
+}
+
+function playNotifSound(){
+  try{
+    const ctx=getAudioCtx();
+    const notes=[523,659,784];
+    notes.forEach((freq,i)=>{
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.frequency.value=freq;
+      osc.type='sine';
+      gain.gain.setValueAtTime(0,ctx.currentTime+i*.18);
+      gain.gain.linearRampToValueAtTime(.35,ctx.currentTime+i*.18+.05);
+      gain.gain.linearRampToValueAtTime(0,ctx.currentTime+i*.18+.28);
+      osc.start(ctx.currentTime+i*.18);
+      osc.stop(ctx.currentTime+i*.18+.3);
+    });
+  }catch(e){}
+}
+
+function showNotifBanner(count){
+  let b=document.getElementById('notifBanner');
+  if(!b){b=document.createElement('div');b.id='notifBanner';b.className='notif-banner';document.body.appendChild(b);}
+  b.innerHTML=`<i class="ti ti-bell-ringing"></i> ${count} nueva${count>1?'s':''} orden${count>1?'es':''} pendiente${count>1?'s':''}`;
+  b.style.display='flex';
+  clearTimeout(b._t);
+  b._t=setTimeout(()=>{b.style.display='none';},4000);
+}
+
+async function fetchKitchenOrders(){
+  if(!useCloud)return[];
+  const{data,error}=await sb.from('ac_orders').select('*').neq('status','finalizado').order('created_at',{ascending:true});
+  if(error)return[];
+  return data||[];
+}
+
+async function fetchAllKitchenOrders(){
+  if(!useCloud)return[];
+  const{data,error}=await sb.from('ac_orders').select('*').order('created_at',{ascending:false}).limit(50);
+  if(error)return[];
+  return data||[];
+}
+
+async function renderKitchen(){
+  const el=document.getElementById('kitchenInner');
+  el.innerHTML=`<div style="text-align:center;padding:2rem;color:#a08878">Cargando órdenes...</div>`;
+  const all=await fetchAllKitchenOrders();
+  kitchenOrders=all;
+  kitchenLastIds=new Set(all.filter(o=>o.status==='ingresado').map(o=>o.id));
+  renderKitchenUI(all);
+  startKitchenPoll();
+}
+
+function renderKitchenUI(orders){
+  const ingresado=orders.filter(o=>o.status==='ingresado');
+  const preparacion=orders.filter(o=>o.status==='preparacion');
+  const finalizado=orders.filter(o=>o.status==='finalizado').slice(0,8);
+
+  const card=(o)=>{
+    const t=new Date(o.created_at);
+    const timeStr=t.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+    const items=o.items.map(i=>`<div class="k-item-row"><span class="k-qty">${i.qty}×</span><span>${i.name}</span></div>`).join('');
+    const typeTag=o.type==='local'?`<span class="k-tag local"><i class="ti ti-home" style="font-size:10px"></i> Local</span>`:`<span class="k-tag llevar"><i class="ti ti-package" style="font-size:10px"></i> Para llevar</span>`;
+    const payTag=o.payment==='QR'?`<span class="k-tag qr">QR</span>`:`<span class="k-tag cash">Efectivo</span>`;
+    const comment=o.comment?`<div class="k-comment"><i class="ti ti-message" style="font-size:11px"></i> ${o.comment}</div>`:'';
+    const btn=o.status==='ingresado'
+      ?`<button class="btn-k confirm" onclick="kConfirm(${o.id})"><i class="ti ti-check"></i> Confirmar recepción</button>`
+      :o.status==='preparacion'
+      ?`<button class="btn-k finish" onclick="kFinish(${o.id})"><i class="ti ti-checks"></i> Marcar como listo</button>`
+      :'';
+    return`<div class="k-card ${o.status}" id="kcard-${o.id}">
+      <div class="k-card-top">
+        <span class="k-order-num">#${o.id}</span>
+        <span class="k-time">${timeStr}</span>
+      </div>
+      <div class="k-items">${items}</div>
+      <div class="k-meta">${typeTag}${payTag}</div>
+      ${comment}
+      <div class="k-cashier"><i class="ti ti-user" style="font-size:11px"></i> ${o.cashier}</div>
+      ${btn}
+    </div>`;
+  };
+
+  const col=(title,cls,icon,items)=>`
+    <div>
+      <div class="k-col-title ${cls}"><i class="ti ${icon}"></i>${title}<span class="k-badge">${items.length}</span></div>
+      ${items.length?items.map(card).join(''):`<div class="k-empty"><i class="ti ti-circle-check"></i>Sin órdenes</div>`}
+    </div>`;
+
+  document.getElementById('kitchenInner').innerHTML=`
+    <div class="kitchen-header">
+      <h1><i class="ti ti-chef-hat" style="font-size:22px;vertical-align:middle;margin-right:6px"></i>Cocina</h1>
+      <button class="k-refresh" onclick="renderKitchen()"><i class="ti ti-refresh"></i> Actualizar</button>
+    </div>
+    <div class="k-cols">
+      ${col('Ingresado','ingresado','ti-clock-hour4',ingresado)}
+      ${col('En preparación','preparacion','ti-flame',preparacion)}
+      ${col('Finalizado','finalizado','ti-circle-check',finalizado)}
+    </div>`;
+}
+
+async function kConfirm(id){
+  if(!useCloud)return;
+  const{error}=await sb.from('ac_orders').update({status:'preparacion',confirmed_at:new Date().toISOString()}).eq('id',id);
+  if(!error){
+    showToast('<i class="ti ti-check"></i> Orden en preparación');
+    renderKitchen();
+  }
+}
+
+async function kFinish(id){
+  if(!useCloud)return;
+  const{error}=await sb.from('ac_orders').update({status:'finalizado',finished_at:new Date().toISOString()}).eq('id',id);
+  if(!error){
+    showToast('<i class="ti ti-checks"></i> Orden finalizada');
+    renderKitchen();
+  }
+}
+
+function startKitchenPoll(){
+  if(kitchenPollTimer)clearInterval(kitchenPollTimer);
+  kitchenPollTimer=setInterval(async()=>{
+    if(activePage!=='kitchen')return;
+    const orders=await fetchKitchenOrders();
+    const newIngresado=orders.filter(o=>o.status==='ingresado'&&!kitchenLastIds.has(o.id));
+    if(newIngresado.length>0){
+      playNotifSound();
+      showNotifBanner(newIngresado.length);
+      newIngresado.forEach(o=>kitchenLastIds.add(o.id));
+      const all=await fetchAllKitchenOrders();
+      renderKitchenUI(all);
+    } else {
+      // silently check for status changes
+      const all=await fetchAllKitchenOrders();
+      const changed=all.some(o=>{
+        const prev=kitchenOrders.find(p=>p.id===o.id);
+        return prev&&prev.status!==o.status;
+      });
+      if(changed){kitchenOrders=all;renderKitchenUI(all);}
+    }
+  },8000);
+}
+
+// Stop poll when leaving kitchen page
+const _origShowPage=showPage;
+function showPage(id){
+  if(id!=='kitchen'&&kitchenPollTimer){clearInterval(kitchenPollTimer);kitchenPollTimer=null;}
+  _origShowPage(id);
+}
+
+// ── END KITCHEN ──
+navigator.serviceWorker.register('sw.js').catch(()=>{});
 let _dp;
 window.addEventListener('beforeinstallprompt',e=>{
   e.preventDefault();_dp=e;
