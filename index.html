@@ -627,6 +627,7 @@ function buildNav(){
   document.getElementById('bnavInner').innerHTML=pages.map(p=>`<button class="bnav-item ${activePage===p.id?'active':''}" onclick="showPage('${p.id}')"><i class="ti ${p.icon}"></i><span>${p.label}</span></button>`).join('');
 }
 function showPage(id){
+  if(id!=='kitchen'&&kitchenPollTimer){clearInterval(kitchenPollTimer);kitchenPollTimer=null;}
   activePage=id;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page'+id.charAt(0).toUpperCase()+id.slice(1)).classList.add('active');
@@ -1153,13 +1154,6 @@ function startKitchenPoll(){
       if(changed){kitchenOrders=all;renderKitchenUI(all);}
     }
   },8000);
-}
-
-// Stop poll when leaving kitchen page
-const _origShowPage=showPage;
-function showPage(id){
-  if(id!=='kitchen'&&kitchenPollTimer){clearInterval(kitchenPollTimer);kitchenPollTimer=null;}
-  _origShowPage(id);
 }
 
 // ── END KITCHEN ──
