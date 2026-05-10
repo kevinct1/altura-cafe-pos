@@ -224,6 +224,7 @@
     .rb-admin{background:#ede9fe;color:#4c1d95;} .rb-cajero{background:var(--gold-light);color:#6b3e0a;}
     .u-actions{display:flex;gap:6px;margin-top:10px;}
 
+    .k-nav-badge{position:absolute;top:2px;right:2px;background:#EF4444;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;border:2px solid var(--bg);}
     /* ── KITCHEN ── */
     .kitchen-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;}
     .kitchen-header h1{font-size:20px;font-weight:800;color:var(--brown);letter-spacing:-.4px;margin:0;}
@@ -607,6 +608,7 @@ async function doLogin(){
     dot.className='sync-dot '+(useCloud?'on':'off');
     dot.title=useCloud?'Conectado a Supabase':'Modo local';
     buildNav();showPage('order');
+    if(useCloud)startKitchenPoll();
   }catch(e){hideLoad();document.getElementById('loginErr').textContent='Error de conexión. Intenta de nuevo.';}
 }
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -764,7 +766,10 @@ async function confirmOrder(){
   showLoad('Guardando orden...');
   try{
     await db.addSale(sale);
-    if(useCloud){await sb.from('ac_orders').insert([order]);}
+    if(useCloud){
+      const{data}=await sb.from('ac_orders').insert([order]).select('id');
+      if(data&&data[0])kitchenKnownIds.add(data[0].id);
+    }
   }catch(e){sale.id=L.nSale++;L.sales.push(sale);saveL();}
   hideLoad();cart=[];orderPayment='Efectivo';orderType='local';
   showToast(`<i class="ti ti-check" style="font-size:12px"></i> ¡Orden confirmada! Bs. ${tot}`);
@@ -1006,7 +1011,8 @@ function showToast(msg){const t=document.getElementById('toast');t.innerHTML=msg
 // ════════════════════════════════════════
 let kitchenOrders=[];
 let kitchenPollTimer=null;
-let kitchenLastIds=new Set();
+let kitchenKnownIds=new Set();  // IDs already seen (any status)
+let kitchenPendingCount=0;       // count of unacknowledged ingresado orders
 let kitchenAudioCtx=null;
 
 function getAudioCtx(){
@@ -1022,36 +1028,41 @@ function playNotifSound(){
       const osc=ctx.createOscillator();
       const gain=ctx.createGain();
       osc.connect(gain);gain.connect(ctx.destination);
-      osc.frequency.value=freq;
-      osc.type='sine';
+      osc.frequency.value=freq;osc.type='sine';
       gain.gain.setValueAtTime(0,ctx.currentTime+i*.18);
-      gain.gain.linearRampToValueAtTime(.35,ctx.currentTime+i*.18+.05);
+      gain.gain.linearRampToValueAtTime(.4,ctx.currentTime+i*.18+.05);
       gain.gain.linearRampToValueAtTime(0,ctx.currentTime+i*.18+.28);
-      osc.start(ctx.currentTime+i*.18);
-      osc.stop(ctx.currentTime+i*.18+.3);
+      osc.start(ctx.currentTime+i*.18);osc.stop(ctx.currentTime+i*.18+.35);
     });
   }catch(e){}
+}
+
+function updateKitchenBadge(count){
+  // Add/remove badge on the kitchen nav button everywhere
+  document.querySelectorAll('.bnav-item, .nav-item').forEach(btn=>{
+    if(btn.querySelector('.ti-chef-hat')){
+      let badge=btn.querySelector('.k-nav-badge');
+      if(count>0){
+        if(!badge){badge=document.createElement('span');badge.className='k-nav-badge';btn.style.position='relative';btn.appendChild(badge);}
+        badge.textContent=count;
+      } else {
+        if(badge)badge.remove();
+      }
+    }
+  });
 }
 
 function showNotifBanner(count){
   let b=document.getElementById('notifBanner');
   if(!b){b=document.createElement('div');b.id='notifBanner';b.className='notif-banner';document.body.appendChild(b);}
-  b.innerHTML=`<i class="ti ti-bell-ringing"></i> ${count} nueva${count>1?'s':''} orden${count>1?'es':''} pendiente${count>1?'s':''}`;
+  b.innerHTML=`<i class="ti ti-bell-ringing"></i> ${count} nueva${count>1?'s':''} orden${count>1?'es':''} en cocina`;
   b.style.display='flex';
-  clearTimeout(b._t);
-  b._t=setTimeout(()=>{b.style.display='none';},4000);
+  clearTimeout(b._t);b._t=setTimeout(()=>{b.style.display='none';},5000);
 }
 
 async function fetchKitchenOrders(){
   if(!useCloud)return[];
-  const{data,error}=await sb.from('ac_orders').select('*').neq('status','finalizado').order('created_at',{ascending:true});
-  if(error)return[];
-  return data||[];
-}
-
-async function fetchAllKitchenOrders(){
-  if(!useCloud)return[];
-  const{data,error}=await sb.from('ac_orders').select('*').order('created_at',{ascending:false}).limit(50);
+  const{data,error}=await sb.from('ac_orders').select('*').order('created_at',{ascending:false}).limit(60);
   if(error)return[];
   return data||[];
 }
@@ -1059,11 +1070,14 @@ async function fetchAllKitchenOrders(){
 async function renderKitchen(){
   const el=document.getElementById('kitchenInner');
   el.innerHTML=`<div style="text-align:center;padding:2rem;color:#a08878">Cargando órdenes...</div>`;
-  const all=await fetchAllKitchenOrders();
+  const all=await fetchKitchenOrders();
   kitchenOrders=all;
-  kitchenLastIds=new Set(all.filter(o=>o.status==='ingresado').map(o=>o.id));
+  // Mark all current ingresado orders as known
+  all.filter(o=>o.status==='ingresado').forEach(o=>kitchenKnownIds.add(o.id));
+  // Clear badge since user is now viewing kitchen
+  kitchenPendingCount=0;
+  updateKitchenBadge(0);
   renderKitchenUI(all);
-  startKitchenPoll();
 }
 
 function renderKitchenUI(orders){
@@ -1075,7 +1089,9 @@ function renderKitchenUI(orders){
     const t=new Date(o.created_at);
     const timeStr=t.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
     const items=o.items.map(i=>`<div class="k-item-row"><span class="k-qty">${i.qty}×</span><span>${i.name}</span></div>`).join('');
-    const typeTag=o.type==='local'?`<span class="k-tag local"><i class="ti ti-home" style="font-size:10px"></i> Local</span>`:`<span class="k-tag llevar"><i class="ti ti-package" style="font-size:10px"></i> Para llevar</span>`;
+    const typeTag=o.type==='local'
+      ?`<span class="k-tag local"><i class="ti ti-home" style="font-size:10px"></i> Local</span>`
+      :`<span class="k-tag llevar"><i class="ti ti-package" style="font-size:10px"></i> Para llevar</span>`;
     const payTag=o.payment==='QR'?`<span class="k-tag qr">QR</span>`:`<span class="k-tag cash">Efectivo</span>`;
     const comment=o.comment?`<div class="k-comment"><i class="ti ti-message" style="font-size:11px"></i> ${o.comment}</div>`:'';
     const btn=o.status==='ingresado'
@@ -1084,10 +1100,7 @@ function renderKitchenUI(orders){
       ?`<button class="btn-k finish" onclick="kFinish(${o.id})"><i class="ti ti-checks"></i> Marcar como listo</button>`
       :'';
     return`<div class="k-card ${o.status}" id="kcard-${o.id}">
-      <div class="k-card-top">
-        <span class="k-order-num">#${o.id}</span>
-        <span class="k-time">${timeStr}</span>
-      </div>
+      <div class="k-card-top"><span class="k-order-num">#${o.id}</span><span class="k-time">${timeStr}</span></div>
       <div class="k-items">${items}</div>
       <div class="k-meta">${typeTag}${payTag}</div>
       ${comment}
@@ -1117,46 +1130,46 @@ function renderKitchenUI(orders){
 async function kConfirm(id){
   if(!useCloud)return;
   const{error}=await sb.from('ac_orders').update({status:'preparacion',confirmed_at:new Date().toISOString()}).eq('id',id);
-  if(!error){
-    showToast('<i class="ti ti-check"></i> Orden en preparación');
-    renderKitchen();
-  }
+  if(!error){showToast('<i class="ti ti-check"></i> Orden en preparación');renderKitchen();}
 }
 
 async function kFinish(id){
   if(!useCloud)return;
   const{error}=await sb.from('ac_orders').update({status:'finalizado',finished_at:new Date().toISOString()}).eq('id',id);
-  if(!error){
-    showToast('<i class="ti ti-checks"></i> Orden finalizada');
-    renderKitchen();
-  }
+  if(!error){showToast('<i class="ti ti-checks"></i> Orden finalizada');renderKitchen();}
 }
 
+// Global background poll — always runs regardless of active page
 function startKitchenPoll(){
   if(kitchenPollTimer)clearInterval(kitchenPollTimer);
   kitchenPollTimer=setInterval(async()=>{
-    if(activePage!=='kitchen')return;
+    if(!useCloud)return;
     const orders=await fetchKitchenOrders();
-    const newIngresado=orders.filter(o=>o.status==='ingresado'&&!kitchenLastIds.has(o.id));
-    if(newIngresado.length>0){
-      playNotifSound();
-      showNotifBanner(newIngresado.length);
-      newIngresado.forEach(o=>kitchenLastIds.add(o.id));
-      const all=await fetchAllKitchenOrders();
-      renderKitchenUI(all);
-    } else {
-      // silently check for status changes
-      const all=await fetchAllKitchenOrders();
-      const changed=all.some(o=>{
-        const prev=kitchenOrders.find(p=>p.id===o.id);
-        return prev&&prev.status!==o.status;
-      });
-      if(changed){kitchenOrders=all;renderKitchenUI(all);}
+    // Find brand-new ingresado orders not seen before
+    const newOrders=orders.filter(o=>o.status==='ingresado'&&!kitchenKnownIds.has(o.id));
+    if(newOrders.length>0){
+      newOrders.forEach(o=>kitchenKnownIds.add(o.id));
+      if(activePage!=='kitchen'){
+        kitchenPendingCount+=newOrders.length;
+        playNotifSound();
+        showNotifBanner(kitchenPendingCount);
+        updateKitchenBadge(kitchenPendingCount);
+      }
     }
-  },8000);
+    // If on kitchen page, refresh UI when anything changed
+    if(activePage==='kitchen'){
+      const changed=orders.length!==kitchenOrders.length||orders.some(o=>{
+        const prev=kitchenOrders.find(p=>p.id===o.id);
+        return !prev||prev.status!==o.status;
+      });
+      if(changed){kitchenOrders=orders;renderKitchenUI(orders);}
+    }
+    kitchenOrders=orders;
+  },6000);
 }
 
 // ── END KITCHEN ──
+
 navigator.serviceWorker.register('sw.js').catch(()=>{});
 let _dp;
 window.addEventListener('beforeinstallprompt',e=>{
