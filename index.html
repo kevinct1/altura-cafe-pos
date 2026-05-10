@@ -380,7 +380,7 @@ INSERT INTO ac_products (name,category,price) VALUES
     <div class="fgroup"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" /></div>
     <button class="btn-login" onclick="doLogin()">Ingresar</button>
     <p class="err" id="loginErr"></p>
-    <p class="reset-cfg" onclick="resetSetup()"><i class="ti ti-settings" style="font-size:12px"></i> Cambiar configuración de nube</p>
+    <!-- configuración de nube integrada -->
   </div>
 </div>
 
@@ -495,15 +495,16 @@ const db={
 };
 
 // ════════════════════════════════════════
-//  SETUP
+//  SETUP — Supabase preconfigurado
 // ════════════════════════════════════════
+const SUPABASE_URL = 'https://hdxfuwtdmccsrwibqvyk.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGZ1d3RkbWNjc3J3aWJxdnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyOTE5ODUsImV4cCI6MjA5Mzg2Nzk4NX0.M2Zc56L9DbkE0ZheTQYIEvd686u_Ou0sRdKiMGLqiN4';
+
 function init(){
-  const cfg=getCfg();
-  if(cfg)tryConnect(cfg.url,cfg.key);
-  else document.getElementById('setupScreen').style.display='flex';
+  tryConnect(SUPABASE_URL, SUPABASE_KEY);
 }
-function getCfg(){try{const s=localStorage.getItem('acCfg');return s?JSON.parse(s):null;}catch(e){return null;}}
-function saveCfg(u,k){localStorage.setItem('acCfg',JSON.stringify({url:u,key:k}));}
+function getCfg(){return {url:SUPABASE_URL,key:SUPABASE_KEY};}
+function saveCfg(u,k){}
 
 async function tryConnect(url,key){
   showLoad('Conectando con Supabase...');
@@ -511,24 +512,15 @@ async function tryConnect(url,key){
     sb=window.supabase.createClient(url,key);
     const{error}=await sb.from('ac_products').select('id').limit(1);
     if(error)throw error;
-    useCloud=true;saveCfg(url,key);hideLoad();showLogin(true);
+    useCloud=true;hideLoad();showLogin(true);
   }catch(e){
     hideLoad();
-    if(getCfg()){useCloud=false;showLogin(false);}
-    else{document.getElementById('setupScreen').style.display='flex';document.getElementById('sErr').textContent='No se pudo conectar. Verifica la URL y la clave.';}
+    useCloud=false;showLogin(false);
   }
 }
-async function connectSB(){
-  const url=document.getElementById('sbUrl').value.trim();
-  const key=document.getElementById('sbKey').value.trim();
-  if(!url||!key){document.getElementById('sErr').textContent='Ingresa la URL y la clave.';return;}
-  document.getElementById('connectBtn').disabled=true;
-  document.getElementById('sErr').textContent='';
-  await tryConnect(url,key);
-  document.getElementById('connectBtn').disabled=false;
-}
-function skipSetup(){useCloud=false;localStorage.removeItem('acCfg');document.getElementById('setupScreen').style.display='none';showLogin(false);}
-function resetSetup(){localStorage.removeItem('acCfg');document.getElementById('loginScreen').style.display='none';document.getElementById('setupScreen').style.display='flex';}
+async function connectSB(){}
+function skipSetup(){useCloud=false;document.getElementById('setupScreen').style.display='none';showLogin(false);}
+function resetSetup(){}
 
 function showLogin(online){
   document.getElementById('setupScreen').style.display='none';
