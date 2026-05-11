@@ -1095,9 +1095,9 @@ function renderKitchenUI(orders){
     const payTag=o.payment==='QR'?`<span class="k-tag qr">QR</span>`:`<span class="k-tag cash">Efectivo</span>`;
     const comment=o.comment?`<div class="k-comment"><i class="ti ti-message" style="font-size:11px"></i> ${o.comment}</div>`:'';
     const btn=o.status==='ingresado'
-      ?`<button class="btn-k confirm" onclick="kConfirm(${o.id})"><i class="ti ti-check"></i> Confirmar recepción</button>`
+      ?`<button class="btn-k confirm" onclick="kConfirm('${o.id}')"><i class="ti ti-check"></i> Confirmar recepción</button>`
       :o.status==='preparacion'
-      ?`<button class="btn-k finish" onclick="kFinish(${o.id})"><i class="ti ti-checks"></i> Marcar como listo</button>`
+      ?`<button class="btn-k finish" onclick="kFinish('${o.id}')"><i class="ti ti-checks"></i> Marcar como listo</button>`
       :'';
     return`<div class="k-card ${o.status}" id="kcard-${o.id}">
       <div class="k-card-top"><span class="k-order-num">#${o.id}</span><span class="k-time">${timeStr}</span></div>
@@ -1129,14 +1129,30 @@ function renderKitchenUI(orders){
 
 async function kConfirm(id){
   if(!useCloud)return;
-  const{error}=await sb.from('ac_orders').update({status:'preparacion',confirmed_at:new Date().toISOString()}).eq('id',id);
-  if(!error){showToast('<i class="ti ti-check"></i> Orden en preparación');renderKitchen();}
+  const btn=document.querySelector(`#kcard-${id} .btn-k.confirm`);
+  if(btn){btn.disabled=true;btn.textContent='Guardando...';}
+  const{data,error}=await sb.from('ac_orders').update({status:'preparacion',confirmed_at:new Date().toISOString()}).eq('id',id).select();
+  if(error){
+    showToast('Error: '+error.message);
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Confirmar recepción';}
+  } else {
+    showToast('<i class="ti ti-check"></i> Orden en preparación');
+    renderKitchen();
+  }
 }
 
 async function kFinish(id){
   if(!useCloud)return;
-  const{error}=await sb.from('ac_orders').update({status:'finalizado',finished_at:new Date().toISOString()}).eq('id',id);
-  if(!error){showToast('<i class="ti ti-checks"></i> Orden finalizada');renderKitchen();}
+  const btn=document.querySelector(`#kcard-${id} .btn-k.finish`);
+  if(btn){btn.disabled=true;btn.textContent='Guardando...';}
+  const{data,error}=await sb.from('ac_orders').update({status:'finalizado',finished_at:new Date().toISOString()}).eq('id',id).select();
+  if(error){
+    showToast('Error: '+error.message);
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-checks"></i> Marcar como listo';}
+  } else {
+    showToast('<i class="ti ti-checks"></i> Orden finalizada');
+    renderKitchen();
+  }
 }
 
 // Global background poll — always runs regardless of active page
