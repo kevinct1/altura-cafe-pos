@@ -264,6 +264,7 @@
     .notif-banner{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#F59E0B;color:#fff;padding:10px 20px;border-radius:99px;font-size:14px;font-weight:800;z-index:500;display:none;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:slideDown .3s ease;}
     @keyframes slideDown{from{top:40px;opacity:0}to{top:60px;opacity:1}}
     .k-refresh{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:transparent;font-size:12px;font-weight:700;color:#6b5744;cursor:pointer;}
+    .k-sound-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1.5px solid #F59E0B;border-radius:var(--r-sm);background:#FEF3C7;font-size:12px;font-weight:700;color:#92400E;cursor:pointer;}
 
 
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;z-index:200;}
@@ -1014,27 +1015,48 @@ let kitchenPollTimer=null;
 let kitchenKnownIds=new Set();  // IDs already seen (any status)
 let kitchenPendingCount=0;       // count of unacknowledged ingresado orders
 let kitchenAudioCtx=null;
+let kitchenAudioUnlocked=false;
 
 function getAudioCtx(){
   if(!kitchenAudioCtx) kitchenAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
   return kitchenAudioCtx;
 }
 
+async function unlockAudio(){
+  try{
+    const ctx=getAudioCtx();
+    if(ctx.state==='suspended') await ctx.resume();
+    // Play a silent buffer to unlock
+    const buf=ctx.createBuffer(1,1,22050);
+    const src=ctx.createBufferSource();
+    src.buffer=buf;src.connect(ctx.destination);src.start(0);
+    kitchenAudioUnlocked=true;
+    // Update button to show active
+    const btn=document.getElementById('soundToggleBtn');
+    if(btn){btn.innerHTML='<i class="ti ti-volume"></i> Sonido activo';btn.style.background='#EAF3DE';btn.style.color='#27500A';btn.style.borderColor='#86C84A';}
+  }catch(e){}
+}
+
 function playNotifSound(){
   try{
     const ctx=getAudioCtx();
-    const notes=[523,659,784];
-    notes.forEach((freq,i)=>{
-      const osc=ctx.createOscillator();
-      const gain=ctx.createGain();
-      osc.connect(gain);gain.connect(ctx.destination);
-      osc.frequency.value=freq;osc.type='sine';
-      gain.gain.setValueAtTime(0,ctx.currentTime+i*.18);
-      gain.gain.linearRampToValueAtTime(.4,ctx.currentTime+i*.18+.05);
-      gain.gain.linearRampToValueAtTime(0,ctx.currentTime+i*.18+.28);
-      osc.start(ctx.currentTime+i*.18);osc.stop(ctx.currentTime+i*.18+.35);
-    });
+    if(ctx.state==='suspended'){ctx.resume().then(()=>_doPlaySound(ctx));}
+    else _doPlaySound(ctx);
   }catch(e){}
+}
+
+function _doPlaySound(ctx){
+  const notes=[523,659,784,1046];
+  notes.forEach((freq,i)=>{
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.frequency.value=freq;osc.type='sine';
+    gain.gain.setValueAtTime(0,ctx.currentTime+i*.2);
+    gain.gain.linearRampToValueAtTime(.45,ctx.currentTime+i*.2+.06);
+    gain.gain.linearRampToValueAtTime(0,ctx.currentTime+i*.2+.32);
+    osc.start(ctx.currentTime+i*.2);osc.stop(ctx.currentTime+i*.2+.35);
+  });
 }
 
 function updateKitchenBadge(count){
@@ -1118,7 +1140,10 @@ function renderKitchenUI(orders){
   document.getElementById('kitchenInner').innerHTML=`
     <div class="kitchen-header">
       <h1><i class="ti ti-chef-hat" style="font-size:22px;vertical-align:middle;margin-right:6px"></i>Cocina</h1>
-      <button class="k-refresh" onclick="renderKitchen()"><i class="ti ti-refresh"></i> Actualizar</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="soundToggleBtn" class="k-sound-btn" onclick="unlockAudio()" ${kitchenAudioUnlocked?'style="background:#EAF3DE;color:#27500A;border-color:#86C84A"':''}><i class="ti ti-volume${kitchenAudioUnlocked?'':'-off'}"></i> ${kitchenAudioUnlocked?'Sonido activo':'Activar sonido'}</button>
+        <button class="k-refresh" onclick="renderKitchen()"><i class="ti ti-refresh"></i> Actualizar</button>
+      </div>
     </div>
     <div class="k-cols">
       ${col('Ingresado','ingresado','ti-clock-hour4',ingresado)}
