@@ -1094,9 +1094,7 @@ async function renderKitchen(){
   el.innerHTML=`<div style="text-align:center;padding:2rem;color:#a08878">Cargando órdenes...</div>`;
   const all=await fetchKitchenOrders();
   kitchenOrders=all;
-  // Mark all current ingresado orders as known
-  all.filter(o=>o.status==='ingresado').forEach(o=>kitchenKnownIds.add(o.id));
-  // Clear badge since user is now viewing kitchen
+  // DO NOT add to kitchenKnownIds here — poll handles that
   kitchenPendingCount=0;
   updateKitchenBadge(0);
   renderKitchenUI(all);
@@ -1181,32 +1179,51 @@ async function kFinish(id){
 }
 
 // Global background poll — always runs regardless of active page
+let kitchenPollInitialized=false;
 function startKitchenPoll(){
   if(kitchenPollTimer)clearInterval(kitchenPollTimer);
+  kitchenPollInitialized=false;
   kitchenPollTimer=setInterval(async()=>{
     if(!useCloud)return;
     const orders=await fetchKitchenOrders();
-    // Find brand-new ingresado orders not seen before
-    const newOrders=orders.filter(o=>o.status==='ingresado'&&!kitchenKnownIds.has(o.id));
-    if(newOrders.length>0){
-      newOrders.forEach(o=>kitchenKnownIds.add(o.id));
+
+    if(!kitchenPollInitialized){
+      // First run: snapshot all existing IDs so we only alert on truly NEW ones
+      orders.forEach(o=>kitchenKnownIds.add(o.id));
+      kitchenOrders=orders;
+      kitchenPollInitialized=true;
+      // If already on kitchen page, render it
+      if(activePage==='kitchen') renderKitchenUI(orders);
+      return;
+    }
+
+    // Find brand-new orders (any status) not seen before
+    const newOrders=orders.filter(o=>!kitchenKnownIds.has(o.id));
+    newOrders.forEach(o=>kitchenKnownIds.add(o.id));
+
+    // Among new ones, count ingresado for notification
+    const newIngresado=newOrders.filter(o=>o.status==='ingresado');
+    if(newIngresado.length>0){
+      playNotifSound();
       if(activePage!=='kitchen'){
-        kitchenPendingCount+=newOrders.length;
-        playNotifSound();
+        kitchenPendingCount+=newIngresado.length;
         showNotifBanner(kitchenPendingCount);
         updateKitchenBadge(kitchenPendingCount);
+      } else {
+        showNotifBanner(newIngresado.length);
       }
     }
+
     // If on kitchen page, refresh UI when anything changed
     if(activePage==='kitchen'){
       const changed=orders.length!==kitchenOrders.length||orders.some(o=>{
         const prev=kitchenOrders.find(p=>p.id===o.id);
         return !prev||prev.status!==o.status;
       });
-      if(changed){kitchenOrders=orders;renderKitchenUI(orders);}
+      if(changed) renderKitchenUI(orders);
     }
     kitchenOrders=orders;
-  },6000);
+  },5000);
 }
 
 // ── END KITCHEN ──
