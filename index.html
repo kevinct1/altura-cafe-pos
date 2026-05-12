@@ -609,7 +609,7 @@ async function doLogin(){
     dot.className='sync-dot '+(useCloud?'on':'off');
     dot.title=useCloud?'Conectado a Supabase':'Modo local';
     buildNav();showPage('order');
-    if(useCloud)startKitchenPoll();
+    if(useCloud){startKitchenPoll();initAlertLoop();}
   }catch(e){hideLoad();document.getElementById('loginErr').textContent='Error de conexión. Intenta de nuevo.';}
 }
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -1015,22 +1015,22 @@ let kitchenPollTimer=null;
 let kitchenKnownIds=new Set();  // IDs already seen (any status)
 let kitchenPendingCount=0;       // count of unacknowledged ingresado orders
 let kitchenAlertTimer=null;      // repeating sound timer
+let kitchenShouldAlert=false;    // simple flag: true = keep ringing
+
+// Start the single global alert loop (runs once at login, forever)
+function initAlertLoop(){
+  if(kitchenAlertTimer)return; // already running
+  kitchenAlertTimer=setInterval(()=>{
+    if(kitchenShouldAlert) playNotifSound();
+  },3000);
+}
 
 function startAlertRepeat(){
-  if(kitchenAlertTimer)clearInterval(kitchenAlertTimer);
-  kitchenAlertTimer=setInterval(async()=>{
-    if(!useCloud)return;
-    const{data}=await sb.from('ac_orders').select('id').eq('status','ingresado');
-    if(data&&data.length>0){
-      playNotifSound();
-    } else {
-      stopAlertRepeat();
-    }
-  },8000);
+  kitchenShouldAlert=true;
 }
 
 function stopAlertRepeat(){
-  if(kitchenAlertTimer){clearInterval(kitchenAlertTimer);kitchenAlertTimer=null;}
+  kitchenShouldAlert=false;
 }
 let kitchenAudioCtx=null;
 let kitchenAudioUnlocked=false;
