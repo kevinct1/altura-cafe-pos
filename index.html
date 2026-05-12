@@ -1017,36 +1017,13 @@ let kitchenPendingCount=0;       // count of unacknowledged ingresado orders
 let kitchenAlertTimer=null;      // repeating sound timer
 
 function startAlertRepeat(){
-  // Stop any existing repeat
   if(kitchenAlertTimer)clearInterval(kitchenAlertTimer);
-  // Repeat sound every 8 seconds while there are unconfirmed ingresado orders
-  kitchenAlertTimer=setInterval(()=>{
-    const hasIngresado=kitchenOrders.some(o=>o.status==='ingresado');
-    if(!hasIngresado){
-      clearInterval(kitchenAlertTimer);
-      kitchenAlertTimer=null;
-    } else {
-      playNotifSound();
-    }
-  },8000);
-}
-
-function stopAlertRepeat(){
-  if(kitchenAlertTimer){clearInterval(kitchenAlertTimer);kitchenAlertTimer=null;}
-}
-let kitchenAlertTimer=null;      // repeating sound timer
-
-function startAlertRepeat(){
-  // Stop any existing repeat
-  if(kitchenAlertTimer)clearInterval(kitchenAlertTimer);
-  // Repeat sound every 8 seconds while there are unconfirmed orders
   kitchenAlertTimer=setInterval(async()=>{
     if(!useCloud)return;
     const{data}=await sb.from('ac_orders').select('id').eq('status','ingresado');
     if(data&&data.length>0){
       playNotifSound();
     } else {
-      // No more pending orders — stop repeating
       stopAlertRepeat();
     }
   },8000);
