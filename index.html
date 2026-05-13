@@ -610,6 +610,8 @@ async function doLogin(){
     dot.title=useCloud?'Conectado a Supabase':'Modo local';
     buildNav();showPage('order');
     if(useCloud){startKitchenPoll();initAlertLoop();}
+    // Restore audio unlock state
+    if(localStorage.getItem('audioUnlocked')==='1') kitchenAudioUnlocked=true;
   }catch(e){hideLoad();document.getElementById('loginErr').textContent='Error de conexión. Intenta de nuevo.';}
 }
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -1031,9 +1033,13 @@ async function unlockAudio(){
     const ctx=getAudioCtx();
     if(ctx.state==='suspended') await ctx.resume();
     kitchenAudioUnlocked=true;
+    localStorage.setItem('audioUnlocked','1');
     _doPlaySound(ctx);
-    const btn=document.getElementById('soundToggleBtn');
-    if(btn){btn.innerHTML='<i class="ti ti-volume"></i> Sonido activo';btn.style.background='#EAF3DE';btn.style.color='#27500A';btn.style.borderColor='#86C84A';}
+    // Update ALL sound buttons on screen
+    document.querySelectorAll('#soundToggleBtn').forEach(btn=>{
+      btn.innerHTML='<i class="ti ti-volume"></i> Sonido activo';
+      btn.style.background='#EAF3DE';btn.style.color='#27500A';btn.style.borderColor='#86C84A';
+    });
   }catch(e){}
 }
 
@@ -1143,7 +1149,6 @@ function renderKitchenUI(orders){
         <button class="k-refresh" onclick="renderKitchen()"><i class="ti ti-refresh"></i> Actualizar</button>
       </div>
     </div>
-    <div id="k-debug" style="font-size:11px;font-family:monospace;background:#1a1a1a;color:#00ff00;padding:8px 12px;border-radius:8px;margin-bottom:12px;">Esperando tick del timer...</div>
     <div class="k-cols">
       ${col('Ingresado','ingresado','ti-clock-hour4',ingresado)}
       ${col('En preparación','preparacion','ti-flame',preparacion)}
@@ -1240,9 +1245,6 @@ function startKitchenPoll(){
 
   // Sound timer: completely independent, checks ringingIds every 3s
   kitchenSoundTimer=setInterval(async()=>{
-    // DEBUG: update panel
-    const dbg=document.getElementById('k-debug');
-    if(dbg) dbg.textContent=`⏱ Sound tick | ringing: ${kitchenRingingIds.size} | unlocked: ${kitchenAudioUnlocked} | ids: [${[...kitchenRingingIds].join(',')}]`;
     if(kitchenRingingIds.size===0) return;
     if(!kitchenAudioUnlocked) return;
     try{
