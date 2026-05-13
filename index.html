@@ -1020,8 +1020,13 @@ let kitchenShouldAlert=false;    // simple flag: true = keep ringing
 // Start the single global alert loop (runs once at login, forever)
 function initAlertLoop(){
   if(kitchenAlertTimer)return; // already running
-  kitchenAlertTimer=setInterval(()=>{
-    if(kitchenShouldAlert) playNotifSound();
+  kitchenAlertTimer=setInterval(async()=>{
+    if(!kitchenShouldAlert)return;
+    try{
+      const ctx=getAudioCtx();
+      if(ctx.state==='suspended') await ctx.resume();
+      _doPlaySound(ctx);
+    }catch(e){}
   },3000);
 }
 
