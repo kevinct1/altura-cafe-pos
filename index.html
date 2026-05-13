@@ -1188,6 +1188,8 @@ async function kFinish(id){
 
 // Global background poll — always runs regardless of active page
 let kitchenPollInitialized=false;
+let kitchenSoundTimer=null;
+
 function startKitchenPoll(){
   if(kitchenPollTimer)clearInterval(kitchenPollTimer);
   kitchenPollInitialized=false;
@@ -1196,7 +1198,6 @@ function startKitchenPoll(){
     const orders=await fetchKitchenOrders();
 
     if(!kitchenPollInitialized){
-      // First run: snapshot all existing IDs — don't alert on these
       orders.forEach(o=>kitchenKnownIds.add(o.id));
       kitchenOrders=orders;
       kitchenPollInitialized=true;
@@ -1204,25 +1205,16 @@ function startKitchenPoll(){
       return;
     }
 
-    // Find brand-new orders not seen before
+    // Find brand-new orders
     const newOrders=orders.filter(o=>!kitchenKnownIds.has(o.id));
     newOrders.forEach(o=>kitchenKnownIds.add(o.id));
-
-    // Add new ingresado orders to ringing set
     const newIngresado=newOrders.filter(o=>o.status==='ingresado');
     newIngresado.forEach(o=>kitchenRingingIds.add(o.id));
 
-    // Remove from ringing any orders no longer ingresado
-    orders.forEach(o=>{
-      if(o.status!=='ingresado') kitchenRingingIds.delete(o.id);
-    });
+    // Remove confirmed orders from ringing set
+    orders.forEach(o=>{ if(o.status!=='ingresado') kitchenRingingIds.delete(o.id); });
 
-    // SOUND: play if any ringing orders remain
-    if(kitchenRingingIds.size>0){
-      playNotifSound();
-    }
-
-    // BADGE + BANNER: only on new arrivals
+    // Notify on new arrivals
     if(newIngresado.length>0){
       if(activePage!=='kitchen'){
         kitchenPendingCount+=newIngresado.length;
@@ -1233,7 +1225,7 @@ function startKitchenPoll(){
       }
     }
 
-    // Refresh kitchen UI if on that page and something changed
+    // Refresh kitchen UI if changed
     if(activePage==='kitchen'){
       const changed=orders.length!==kitchenOrders.length||orders.some(o=>{
         const prev=kitchenOrders.find(p=>p.id===o.id);
@@ -1242,6 +1234,12 @@ function startKitchenPoll(){
       if(changed) renderKitchenUI(orders);
     }
     kitchenOrders=orders;
+  },5000);
+
+  // Independent sound timer — runs every 3s, never blocked by network
+  if(kitchenSoundTimer) clearInterval(kitchenSoundTimer);
+  kitchenSoundTimer=setInterval(()=>{
+    if(kitchenRingingIds.size>0) playNotifSound();
   },3000);
 }
 
