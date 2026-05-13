@@ -1030,37 +1030,36 @@ async function unlockAudio(){
   try{
     const ctx=getAudioCtx();
     if(ctx.state==='suspended') await ctx.resume();
-    // Play a silent buffer to unlock
-    const buf=ctx.createBuffer(1,1,22050);
-    const src=ctx.createBufferSource();
-    src.buffer=buf;src.connect(ctx.destination);src.start(0);
     kitchenAudioUnlocked=true;
-    // Update button to show active
+    _doPlaySound(ctx);
     const btn=document.getElementById('soundToggleBtn');
     if(btn){btn.innerHTML='<i class="ti ti-volume"></i> Sonido activo';btn.style.background='#EAF3DE';btn.style.color='#27500A';btn.style.borderColor='#86C84A';}
   }catch(e){}
 }
 
 function playNotifSound(){
+  if(!kitchenAudioUnlocked) return;
   try{
     const ctx=getAudioCtx();
-    if(ctx.state==='suspended'){ctx.resume().then(()=>_doPlaySound(ctx));}
-    else _doPlaySound(ctx);
+    const resume = ctx.state==='suspended' ? ctx.resume() : Promise.resolve();
+    resume.then(()=>_doPlaySound(ctx)).catch(()=>{});
   }catch(e){}
 }
 
 function _doPlaySound(ctx){
-  const notes=[523,659,784,1046];
-  notes.forEach((freq,i)=>{
-    const osc=ctx.createOscillator();
-    const gain=ctx.createGain();
-    osc.connect(gain);gain.connect(ctx.destination);
-    osc.frequency.value=freq;osc.type='sine';
-    gain.gain.setValueAtTime(0,ctx.currentTime+i*.2);
-    gain.gain.linearRampToValueAtTime(.45,ctx.currentTime+i*.2+.06);
-    gain.gain.linearRampToValueAtTime(0,ctx.currentTime+i*.2+.32);
-    osc.start(ctx.currentTime+i*.2);osc.stop(ctx.currentTime+i*.2+.35);
-  });
+  try{
+    const notes=[523,659,784,1046];
+    notes.forEach((freq,i)=>{
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.frequency.value=freq;osc.type='sine';
+      gain.gain.setValueAtTime(0,ctx.currentTime+i*.2);
+      gain.gain.linearRampToValueAtTime(.45,ctx.currentTime+i*.2+.06);
+      gain.gain.linearRampToValueAtTime(0,ctx.currentTime+i*.2+.32);
+      osc.start(ctx.currentTime+i*.2);osc.stop(ctx.currentTime+i*.2+.35);
+    });
+  }catch(e){}
 }
 
 function updateKitchenBadge(count){
@@ -1242,8 +1241,14 @@ function startKitchenPoll(){
 
   // Independent sound timer — runs every 3s, never blocked by network
   if(kitchenSoundTimer) clearInterval(kitchenSoundTimer);
-  kitchenSoundTimer=setInterval(()=>{
-    if(kitchenRingingIds.size>0) playNotifSound();
+  kitchenSoundTimer=setInterval(async()=>{
+    if(kitchenRingingIds.size===0) return;
+    if(!kitchenAudioUnlocked) return;
+    try{
+      const ctx=getAudioCtx();
+      if(ctx.state==='suspended') await ctx.resume();
+      _doPlaySound(ctx);
+    }catch(e){}
   },3000);
 }
 
