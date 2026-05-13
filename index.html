@@ -224,8 +224,9 @@
     .rb-admin{background:#ede9fe;color:#4c1d95;} .rb-cajero{background:var(--gold-light);color:#6b3e0a;}
     .u-actions{display:flex;gap:6px;margin-top:10px;}
 
-    .k-nav-badge{position:absolute;top:2px;right:2px;background:#EF4444;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;border:2px solid var(--bg);}
+
     /* ── KITCHEN ── */
+    .k-nav-badge{position:absolute;top:2px;right:2px;background:#EF4444;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;border:2px solid var(--bg);}
     .kitchen-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;}
     .kitchen-header h1{font-size:20px;font-weight:800;color:var(--brown);letter-spacing:-.4px;margin:0;}
     .k-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
@@ -235,7 +236,7 @@
     .k-col-title.preparacion{background:#DBEAFE;color:#1E40AF;}
     .k-col-title.finalizado{background:#D1FAE5;color:#065F46;}
     .k-badge{background:rgba(0,0,0,.12);color:inherit;border-radius:99px;font-size:10px;padding:1px 7px;font-weight:800;}
-    .k-card{background:#fff;border:2px solid var(--border);border-radius:var(--r-md);padding:14px;margin-bottom:10px;position:relative;transition:border-color .2s;}
+    .k-card{background:#fff;border:2px solid var(--border);border-radius:var(--r-md);padding:14px;margin-bottom:10px;}
     .k-card.ingresado{border-color:#F59E0B;animation:kPulse 2s infinite;}
     .k-card.preparacion{border-color:#3B82F6;}
     .k-card.finalizado{border-color:#10B981;opacity:.75;}
@@ -256,17 +257,13 @@
     .k-cashier{font-size:11px;color:#a08878;margin-bottom:10px;}
     .btn-k{width:100%;padding:10px;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
     .btn-k.confirm{background:#F59E0B;color:#fff;}
-    .btn-k.confirm:active{background:#D97706;}
     .btn-k.finish{background:#10B981;color:#fff;}
-    .btn-k.finish:active{background:#059669;}
     .k-empty{text-align:center;padding:2rem 0;color:#b09a88;font-size:13px;font-weight:600;}
     .k-empty i{font-size:28px;display:block;margin-bottom:6px;color:#c8bfb4;}
-    .notif-banner{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#F59E0B;color:#fff;padding:10px 20px;border-radius:99px;font-size:14px;font-weight:800;z-index:500;display:none;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:slideDown .3s ease;}
-    @keyframes slideDown{from{top:40px;opacity:0}to{top:60px;opacity:1}}
-    .k-refresh{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:transparent;font-size:12px;font-weight:700;color:#6b5744;cursor:pointer;}
+    .notif-banner{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#F59E0B;color:#fff;padding:10px 20px;border-radius:99px;font-size:14px;font-weight:800;z-index:500;display:none;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);}
     .k-sound-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1.5px solid #F59E0B;border-radius:var(--r-sm);background:#FEF3C7;font-size:12px;font-weight:700;color:#92400E;cursor:pointer;}
-
-
+    .k-refresh{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:transparent;font-size:12px;font-weight:700;color:#6b5744;cursor:pointer;}
+    /* ── MODAL ── */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;z-index:200;}
     .modal-box{background:#fff;border-radius:var(--r-lg) var(--r-lg) 0 0;padding:1.5rem;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;}
     .modal-title{font-size:17px;font-weight:800;color:var(--brown);margin-bottom:1rem;}
@@ -422,7 +419,7 @@ INSERT INTO ac_products (name,category,price) VALUES
     <div class="fgroup"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" /></div>
     <button class="btn-login" onclick="doLogin()">Ingresar</button>
     <p class="err" id="loginErr"></p>
-    <!-- configuración de nube integrada -->
+    <!-- cloud config integrated -->
   </div>
 </div>
 
@@ -540,15 +537,11 @@ const db={
 // ════════════════════════════════════════
 //  SETUP — Supabase preconfigurado
 // ════════════════════════════════════════
-const SUPABASE_URL = 'https://hdxfuwtdmccsrwibqvyk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGZ1d3RkbWNjc3J3aWJxdnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyOTE5ODUsImV4cCI6MjA5Mzg2Nzk4NX0.M2Zc56L9DbkE0ZheTQYIEvd686u_Ou0sRdKiMGLqiN4';
-
-function init(){
-  tryConnect(SUPABASE_URL, SUPABASE_KEY);
-}
+const SUPABASE_URL='https://hdxfuwtdmccsrwibqvyk.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGZ1d3RkbWNjc3J3aWJxdnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyOTE5ODUsImV4cCI6MjA5Mzg2Nzk4NX0.M2Zc56L9DbkE0ZheTQYIEvd686u_Ou0sRdKiMGLqiN4';
+function init(){ tryConnect(SUPABASE_URL,SUPABASE_KEY); }
 function getCfg(){return {url:SUPABASE_URL,key:SUPABASE_KEY};}
-function saveCfg(u,k){}
-
+function saveCfg(){}
 async function tryConnect(url,key){
   showLoad('Conectando con Supabase...');
   try{
@@ -556,10 +549,7 @@ async function tryConnect(url,key){
     const{error}=await sb.from('ac_products').select('id').limit(1);
     if(error)throw error;
     useCloud=true;hideLoad();showLogin(true);
-  }catch(e){
-    hideLoad();
-    useCloud=false;showLogin(false);
-  }
+  }catch(e){hideLoad();useCloud=false;showLogin(false);}
 }
 async function connectSB(){}
 function skipSetup(){useCloud=false;document.getElementById('setupScreen').style.display='none';showLogin(false);}
@@ -609,8 +599,7 @@ async function doLogin(){
     dot.className='sync-dot '+(useCloud?'on':'off');
     dot.title=useCloud?'Conectado a Supabase':'Modo local';
     buildNav();showPage('order');
-    if(useCloud){startKitchenPoll();initAlertLoop();}
-    // Restore audio unlock state
+    if(useCloud) startKitchenPoll();
     if(localStorage.getItem('audioUnlocked')==='1') kitchenAudioUnlocked=true;
   }catch(e){hideLoad();document.getElementById('loginErr').textContent='Error de conexión. Intenta de nuevo.';}
 }
@@ -770,7 +759,7 @@ async function confirmOrder(){
     await db.addSale(sale);
     if(useCloud){
       const{data}=await sb.from('ac_orders').insert([order]).select('id');
-      if(data&&data[0])kitchenKnownIds.add(data[0].id);
+      if(data&&data[0]) kitchenKnownIds.add(data[0].id);
     }
   }catch(e){sale.id=L.nSale++;L.sales.push(sale);saveL();}
   hideLoad();cart=[];orderPayment='Efectivo';orderType='local';
@@ -1009,19 +998,19 @@ function showToast(msg){const t=document.getElementById('toast');t.innerHTML=msg
 // ════════════════════════════════════════
 //  PWA
 // ════════════════════════════════════════
+
+// ════════════════════════════════════════
 //  KITCHEN
 // ════════════════════════════════════════
 let kitchenOrders=[];
 let kitchenPollTimer=null;
-let kitchenKnownIds=new Set();  // IDs already seen (any status)
-let kitchenPendingCount=0;       // count of unacknowledged ingresado orders
-let kitchenRingingIds=new Set(); // IDs of ingresado orders currently ringing
-
-function initAlertLoop(){} // kept for compatibility, no longer needed
-function startAlertRepeat(){}
-function stopAlertRepeat(){kitchenRingingIds.clear();}
+let kitchenSoundTimer=null;
+let kitchenKnownIds=new Set();
+let kitchenRingingIds=new Set();
+let kitchenPendingCount=0;
 let kitchenAudioCtx=null;
 let kitchenAudioUnlocked=false;
+let kitchenPollInitialized=false;
 
 function getAudioCtx(){
   if(!kitchenAudioCtx) kitchenAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
@@ -1035,218 +1024,167 @@ async function unlockAudio(){
     kitchenAudioUnlocked=true;
     localStorage.setItem('audioUnlocked','1');
     _doPlaySound(ctx);
-    // Update ALL sound buttons on screen
-    document.querySelectorAll('#soundToggleBtn').forEach(btn=>{
-      btn.innerHTML='<i class="ti ti-volume"></i> Sonido activo';
-      btn.style.background='#EAF3DE';btn.style.color='#27500A';btn.style.borderColor='#86C84A';
+    document.querySelectorAll('.k-sound-btn').forEach(b=>{
+      b.innerHTML='<i class="ti ti-volume"></i> Sonido activo';
+      b.style.cssText='background:#EAF3DE;color:#27500A;border-color:#86C84A;display:flex;align-items:center;gap:6px;padding:7px 12px;border-width:1.5px;border-style:solid;border-radius:var(--r-sm);font-size:12px;font-weight:700;cursor:pointer;';
     });
-  }catch(e){}
-}
-
-function playNotifSound(){
-  if(!kitchenAudioUnlocked) return;
-  try{
-    const ctx=getAudioCtx();
-    const resume = ctx.state==='suspended' ? ctx.resume() : Promise.resolve();
-    resume.then(()=>_doPlaySound(ctx)).catch(()=>{});
   }catch(e){}
 }
 
 function _doPlaySound(ctx){
   try{
-    const notes=[523,659,784,1046];
-    notes.forEach((freq,i)=>{
-      const osc=ctx.createOscillator();
-      const gain=ctx.createGain();
-      osc.connect(gain);gain.connect(ctx.destination);
-      osc.frequency.value=freq;osc.type='sine';
-      gain.gain.setValueAtTime(0,ctx.currentTime+i*.2);
-      gain.gain.linearRampToValueAtTime(.45,ctx.currentTime+i*.2+.06);
-      gain.gain.linearRampToValueAtTime(0,ctx.currentTime+i*.2+.32);
-      osc.start(ctx.currentTime+i*.2);osc.stop(ctx.currentTime+i*.2+.35);
+    [523,659,784,1046].forEach((freq,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=freq;o.type='sine';
+      g.gain.setValueAtTime(0,ctx.currentTime+i*.2);
+      g.gain.linearRampToValueAtTime(.4,ctx.currentTime+i*.2+.06);
+      g.gain.linearRampToValueAtTime(0,ctx.currentTime+i*.2+.32);
+      o.start(ctx.currentTime+i*.2);o.stop(ctx.currentTime+i*.2+.35);
     });
   }catch(e){}
-}
-
-function updateKitchenBadge(count){
-  // Add/remove badge on the kitchen nav button everywhere
-  document.querySelectorAll('.bnav-item, .nav-item').forEach(btn=>{
-    if(btn.querySelector('.ti-chef-hat')){
-      let badge=btn.querySelector('.k-nav-badge');
-      if(count>0){
-        if(!badge){badge=document.createElement('span');badge.className='k-nav-badge';btn.style.position='relative';btn.appendChild(badge);}
-        badge.textContent=count;
-      } else {
-        if(badge)badge.remove();
-      }
-    }
-  });
 }
 
 function showNotifBanner(count){
   let b=document.getElementById('notifBanner');
   if(!b){b=document.createElement('div');b.id='notifBanner';b.className='notif-banner';document.body.appendChild(b);}
-  b.innerHTML=`<i class="ti ti-bell-ringing"></i> ${count} nueva${count>1?'s':''} orden${count>1?'es':''} en cocina`;
+  b.innerHTML=`<i class="ti ti-bell-ringing"></i> ${count} orden${count>1?'es':''} nueva${count>1?'s':''}`;
   b.style.display='flex';
   clearTimeout(b._t);b._t=setTimeout(()=>{b.style.display='none';},5000);
+}
+
+function updateKitchenBadge(count){
+  document.querySelectorAll('.bnav-item,.nav-item').forEach(btn=>{
+    if(btn.querySelector('.ti-chef-hat')){
+      btn.style.position='relative';
+      let badge=btn.querySelector('.k-nav-badge');
+      if(count>0){
+        if(!badge){badge=document.createElement('span');badge.className='k-nav-badge';btn.appendChild(badge);}
+        badge.textContent=count;
+      } else if(badge) badge.remove();
+    }
+  });
 }
 
 async function fetchKitchenOrders(){
   if(!useCloud)return[];
   const{data,error}=await sb.from('ac_orders').select('*').order('created_at',{ascending:false}).limit(60);
-  if(error)return[];
-  return data||[];
+  return error?[]:data||[];
 }
 
 async function renderKitchen(){
-  const el=document.getElementById('kitchenInner');
-  el.innerHTML=`<div style="text-align:center;padding:2rem;color:#a08878">Cargando órdenes...</div>`;
+  document.getElementById('kitchenInner').innerHTML='<div style="text-align:center;padding:2rem;color:#a08878">Cargando...</div>';
   const all=await fetchKitchenOrders();
   kitchenOrders=all;
   renderKitchenUI(all);
 }
 
 function renderKitchenUI(orders){
-  const ingresado=orders.filter(o=>o.status==='ingresado');
-  const preparacion=orders.filter(o=>o.status==='preparacion');
-  const finalizado=orders.filter(o=>o.status==='finalizado').slice(0,8);
+  const ing=orders.filter(o=>o.status==='ingresado');
+  const prep=orders.filter(o=>o.status==='preparacion');
+  const fin=orders.filter(o=>o.status==='finalizado').slice(0,8);
+  const unlocked=kitchenAudioUnlocked;
 
-  const card=(o)=>{
+  const card=o=>{
     const t=new Date(o.created_at);
-    const timeStr=t.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+    const ts=t.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
     const items=o.items.map(i=>`<div class="k-item-row"><span class="k-qty">${i.qty}×</span><span>${i.name}</span></div>`).join('');
-    const typeTag=o.type==='local'
-      ?`<span class="k-tag local"><i class="ti ti-home" style="font-size:10px"></i> Local</span>`
-      :`<span class="k-tag llevar"><i class="ti ti-package" style="font-size:10px"></i> Para llevar</span>`;
+    const typeTag=o.type==='local'?`<span class="k-tag local">Local</span>`:`<span class="k-tag llevar">Para llevar</span>`;
     const payTag=o.payment==='QR'?`<span class="k-tag qr">QR</span>`:`<span class="k-tag cash">Efectivo</span>`;
-    const comment=o.comment?`<div class="k-comment"><i class="ti ti-message" style="font-size:11px"></i> ${o.comment}</div>`:'';
+    const comment=o.comment?`<div class="k-comment">${o.comment}</div>`:'';
     const btn=o.status==='ingresado'
       ?`<button class="btn-k confirm" onclick="kConfirm('${o.id}')"><i class="ti ti-check"></i> Confirmar recepción</button>`
       :o.status==='preparacion'
-      ?`<button class="btn-k finish" onclick="kFinish('${o.id}')"><i class="ti ti-checks"></i> Marcar como listo</button>`
-      :'';
-    return`<div class="k-card ${o.status}" id="kcard-${o.id}">
-      <div class="k-card-top"><span class="k-order-num">#${o.id}</span><span class="k-time">${timeStr}</span></div>
+      ?`<button class="btn-k finish" onclick="kFinish('${o.id}')"><i class="ti ti-checks"></i> Marcar como listo</button>`:'';
+    return `<div class="k-card ${o.status}">
+      <div class="k-card-top"><span class="k-order-num">#${o.id}</span><span class="k-time">${ts}</span></div>
       <div class="k-items">${items}</div>
       <div class="k-meta">${typeTag}${payTag}</div>
-      ${comment}
-      <div class="k-cashier"><i class="ti ti-user" style="font-size:11px"></i> ${o.cashier}</div>
-      ${btn}
-    </div>`;
+      ${comment}<div class="k-cashier"><i class="ti ti-user" style="font-size:11px"></i> ${o.cashier}</div>
+      ${btn}</div>`;
   };
 
-  const col=(title,cls,icon,items)=>`
-    <div>
-      <div class="k-col-title ${cls}"><i class="ti ${icon}"></i>${title}<span class="k-badge">${items.length}</span></div>
-      ${items.length?items.map(card).join(''):`<div class="k-empty"><i class="ti ti-circle-check"></i>Sin órdenes</div>`}
+  const col=(title,cls,icon,items)=>`<div>
+    <div class="k-col-title ${cls}"><i class="ti ${icon}"></i>${title}<span class="k-badge">${items.length}</span></div>
+    ${items.length?items.map(card).join(''):`<div class="k-empty"><i class="ti ti-circle-check"></i>Sin órdenes</div>`}
     </div>`;
+
+  const soundBtn=unlocked
+    ?`<button class="k-sound-btn" onclick="unlockAudio()" style="background:#EAF3DE;color:#27500A;border-color:#86C84A"><i class="ti ti-volume"></i> Sonido activo</button>`
+    :`<button class="k-sound-btn" onclick="unlockAudio()"><i class="ti ti-volume-off"></i> Activar sonido</button>`;
 
   document.getElementById('kitchenInner').innerHTML=`
     <div class="kitchen-header">
       <h1><i class="ti ti-chef-hat" style="font-size:22px;vertical-align:middle;margin-right:6px"></i>Cocina</h1>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button id="soundToggleBtn" class="k-sound-btn" onclick="unlockAudio()" ${kitchenAudioUnlocked?'style="background:#EAF3DE;color:#27500A;border-color:#86C84A"':''}><i class="ti ti-volume${kitchenAudioUnlocked?'':'-off'}"></i> ${kitchenAudioUnlocked?'Sonido activo':'Activar sonido'}</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">${soundBtn}
         <button class="k-refresh" onclick="renderKitchen()"><i class="ti ti-refresh"></i> Actualizar</button>
       </div>
     </div>
     <div class="k-cols">
-      ${col('Ingresado','ingresado','ti-clock-hour4',ingresado)}
-      ${col('En preparación','preparacion','ti-flame',preparacion)}
-      ${col('Finalizado','finalizado','ti-circle-check',finalizado)}
+      ${col('Ingresado','ingresado','ti-clock-hour4',ing)}
+      ${col('En preparación','preparacion','ti-flame',prep)}
+      ${col('Finalizado','finalizado','ti-circle-check',fin)}
     </div>`;
 }
 
 async function kConfirm(id){
   if(!useCloud)return;
-  const btn=document.querySelector(`#kcard-${id} .btn-k.confirm`);
-  if(btn){btn.disabled=true;btn.textContent='Guardando...';}
-  const{data,error}=await sb.from('ac_orders').update({status:'preparacion',confirmed_at:new Date().toISOString()}).eq('id',id).select();
-  if(error){
-    showToast('Error: '+error.message);
-    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Confirmar recepción';}
-  } else {
+  const{error}=await sb.from('ac_orders').update({status:'preparacion',confirmed_at:new Date().toISOString()}).eq('id',id);
+  if(!error){
+    kitchenRingingIds.delete(parseInt(id));kitchenRingingIds.delete(id);
+    if(kitchenRingingIds.size===0) updateKitchenBadge(0);
     showToast('<i class="ti ti-check"></i> Orden en preparación');
-    // Check if any ingresado orders remain — if not, stop the alert
-    const{data:remaining}=await sb.from('ac_orders').select('id').eq('status','ingresado');
-    if(!remaining||remaining.length===0) stopAlertRepeat();
     renderKitchen();
-  }
+  }else showToast('Error: '+error.message);
 }
 
 async function kFinish(id){
   if(!useCloud)return;
-  const btn=document.querySelector(`#kcard-${id} .btn-k.finish`);
-  if(btn){btn.disabled=true;btn.textContent='Guardando...';}
-  const{data,error}=await sb.from('ac_orders').update({status:'finalizado',finished_at:new Date().toISOString()}).eq('id',id).select();
-  if(error){
-    showToast('Error: '+error.message);
-    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-checks"></i> Marcar como listo';}
-  } else {
-    showToast('<i class="ti ti-checks"></i> Orden finalizada');
-    renderKitchen();
-  }
+  const{error}=await sb.from('ac_orders').update({status:'finalizado',finished_at:new Date().toISOString()}).eq('id',id);
+  if(!error){showToast('<i class="ti ti-checks"></i> Orden finalizada');renderKitchen();}
+  else showToast('Error: '+error.message);
 }
 
-// Global background poll — always runs regardless of active page
-let kitchenPollInitialized=false;
-let kitchenSoundTimer=null;
-
 function startKitchenPoll(){
-  if(kitchenPollTimer)clearInterval(kitchenPollTimer);
-  if(kitchenSoundTimer)clearInterval(kitchenSoundTimer);
+  if(kitchenPollTimer) clearInterval(kitchenPollTimer);
+  if(kitchenSoundTimer) clearInterval(kitchenSoundTimer);
   kitchenPollInitialized=false;
 
-  // Poll: fetch orders every 5s, detect new ones
   kitchenPollTimer=setInterval(async()=>{
     if(!useCloud)return;
     const orders=await fetchKitchenOrders();
-
     if(!kitchenPollInitialized){
-      // First run: mark everything as known, no alerts
       orders.forEach(o=>kitchenKnownIds.add(o.id));
       kitchenOrders=orders;
       kitchenPollInitialized=true;
       if(activePage==='kitchen') renderKitchenUI(orders);
       return;
     }
-
-    // New orders = IDs we haven't seen before
     const newOrders=orders.filter(o=>!kitchenKnownIds.has(o.id));
     newOrders.forEach(o=>kitchenKnownIds.add(o.id));
-
-    // Add new ingresado orders to ringing
-    newOrders.filter(o=>o.status==='ingresado').forEach(o=>kitchenRingingIds.add(o.id));
-
-    // Remove from ringing any that are no longer ingresado
+    const newIng=newOrders.filter(o=>o.status==='ingresado');
+    newIng.forEach(o=>kitchenRingingIds.add(o.id));
     for(const id of [...kitchenRingingIds]){
-      const order=orders.find(o=>o.id===id);
-      if(!order||order.status!=='ingresado') kitchenRingingIds.delete(id);
+      const o=orders.find(x=>x.id==id);
+      if(!o||o.status!=='ingresado') kitchenRingingIds.delete(id);
     }
-
-    // Notify on new arrivals
-    if(newOrders.filter(o=>o.status==='ingresado').length>0){
-      if(activePage!=='kitchen'){
-        kitchenPendingCount=kitchenRingingIds.size;
-        showNotifBanner(kitchenPendingCount);
-        updateKitchenBadge(kitchenPendingCount);
-      } else {
-        showNotifBanner(kitchenRingingIds.size);
-      }
+    if(newIng.length>0){
+      kitchenPendingCount=kitchenRingingIds.size;
+      showNotifBanner(kitchenPendingCount);
+      if(activePage!=='kitchen') updateKitchenBadge(kitchenPendingCount);
     }
-
-    // Update kitchen UI if on that page and data changed
     if(activePage==='kitchen'){
-      const changed=orders.length!==kitchenOrders.length||
-        orders.some(o=>{const p=kitchenOrders.find(x=>x.id===o.id);return !p||p.status!==o.status;});
-      if(changed||newOrders.length>0) renderKitchenUI(orders);
+      const changed=orders.length!==kitchenOrders.length||orders.some(o=>{
+        const p=kitchenOrders.find(x=>x.id===o.id);return !p||p.status!==o.status;
+      });
+      if(changed||newIng.length>0) renderKitchenUI(orders);
     }
     kitchenOrders=orders;
   },5000);
 
-  // Sound timer: completely independent, checks ringingIds every 3s
+  // Independent sound timer — pure JS, no network
   kitchenSoundTimer=setInterval(async()=>{
-    if(kitchenRingingIds.size===0) return;
-    if(!kitchenAudioUnlocked) return;
+    if(!kitchenAudioUnlocked||kitchenRingingIds.size===0) return;
     try{
       const ctx=getAudioCtx();
       if(ctx.state==='suspended') await ctx.resume();
@@ -1254,10 +1192,9 @@ function startKitchenPoll(){
     }catch(e){}
   },3000);
 }
-
 // ── END KITCHEN ──
 
-navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 let _dp;
 window.addEventListener('beforeinstallprompt',e=>{
   e.preventDefault();_dp=e;
