@@ -1097,14 +1097,6 @@ async function renderKitchen(){
   el.innerHTML=`<div style="text-align:center;padding:2rem;color:#a08878">Cargando órdenes...</div>`;
   const all=await fetchKitchenOrders();
   kitchenOrders=all;
-  // Sync known IDs — orders loaded here are already "seen"
-  all.forEach(o=>kitchenKnownIds.add(o.id));
-  // Keep ringing only IDs still ingresado
-  for(const id of kitchenRingingIds){
-    if(!all.find(o=>o.id===id&&o.status==='ingresado')) kitchenRingingIds.delete(id);
-  }
-  if(kitchenRingingIds.size===0) kitchenPendingCount=0;
-  updateKitchenBadge(kitchenRingingIds.size);
   renderKitchenUI(all);
 }
 
@@ -1195,12 +1187,16 @@ let kitchenSoundTimer=null;
 
 function startKitchenPoll(){
   if(kitchenPollTimer)clearInterval(kitchenPollTimer);
+  if(kitchenSoundTimer)clearInterval(kitchenSoundTimer);
   kitchenPollInitialized=false;
+
+  // Poll: fetch orders every 5s, detect new ones
   kitchenPollTimer=setInterval(async()=>{
     if(!useCloud)return;
     const orders=await fetchKitchenOrders();
 
     if(!kitchenPollInitialized){
+      // First run: mark everything as known, no alerts
       orders.forEach(o=>kitchenKnownIds.add(o.id));
       kitchenOrders=orders;
       kitchenPollInitialized=true;
@@ -1208,39 +1204,40 @@ function startKitchenPoll(){
       return;
     }
 
-    // Find brand-new orders
+    // New orders = IDs we haven't seen before
     const newOrders=orders.filter(o=>!kitchenKnownIds.has(o.id));
     newOrders.forEach(o=>kitchenKnownIds.add(o.id));
-    const newIngresado=newOrders.filter(o=>o.status==='ingresado');
-    newIngresado.forEach(o=>kitchenRingingIds.add(o.id));
 
-    // Remove confirmed orders from ringing set
-    orders.forEach(o=>{ if(o.status!=='ingresado') kitchenRingingIds.delete(o.id); });
+    // Add new ingresado orders to ringing
+    newOrders.filter(o=>o.status==='ingresado').forEach(o=>kitchenRingingIds.add(o.id));
+
+    // Remove from ringing any that are no longer ingresado
+    for(const id of [...kitchenRingingIds]){
+      const order=orders.find(o=>o.id===id);
+      if(!order||order.status!=='ingresado') kitchenRingingIds.delete(id);
+    }
 
     // Notify on new arrivals
-    if(newIngresado.length>0){
+    if(newOrders.filter(o=>o.status==='ingresado').length>0){
       if(activePage!=='kitchen'){
-        kitchenPendingCount+=newIngresado.length;
+        kitchenPendingCount=kitchenRingingIds.size;
         showNotifBanner(kitchenPendingCount);
         updateKitchenBadge(kitchenPendingCount);
       } else {
-        showNotifBanner(newIngresado.length);
+        showNotifBanner(kitchenRingingIds.size);
       }
     }
 
-    // Refresh kitchen UI if changed
+    // Update kitchen UI if on that page and data changed
     if(activePage==='kitchen'){
-      const changed=orders.length!==kitchenOrders.length||orders.some(o=>{
-        const prev=kitchenOrders.find(p=>p.id===o.id);
-        return !prev||prev.status!==o.status;
-      });
-      if(changed||newIngresado.length>0) renderKitchenUI(orders);
+      const changed=orders.length!==kitchenOrders.length||
+        orders.some(o=>{const p=kitchenOrders.find(x=>x.id===o.id);return !p||p.status!==o.status;});
+      if(changed||newOrders.length>0) renderKitchenUI(orders);
     }
     kitchenOrders=orders;
   },5000);
 
-  // Independent sound timer — runs every 3s, never blocked by network
-  if(kitchenSoundTimer) clearInterval(kitchenSoundTimer);
+  // Sound timer: completely independent, checks ringingIds every 3s
   kitchenSoundTimer=setInterval(async()=>{
     if(kitchenRingingIds.size===0) return;
     if(!kitchenAudioUnlocked) return;
