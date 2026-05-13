@@ -1098,9 +1098,14 @@ async function renderKitchen(){
   el.innerHTML=`<div style="text-align:center;padding:2rem;color:#a08878">Cargando órdenes...</div>`;
   const all=await fetchKitchenOrders();
   kitchenOrders=all;
-  // DO NOT add to kitchenKnownIds here — poll handles that
-  kitchenPendingCount=0;
-  updateKitchenBadge(0);
+  // Sync known IDs — orders loaded here are already "seen"
+  all.forEach(o=>kitchenKnownIds.add(o.id));
+  // Keep ringing only IDs still ingresado
+  for(const id of kitchenRingingIds){
+    if(!all.find(o=>o.id===id&&o.status==='ingresado')) kitchenRingingIds.delete(id);
+  }
+  if(kitchenRingingIds.size===0) kitchenPendingCount=0;
+  updateKitchenBadge(kitchenRingingIds.size);
   renderKitchenUI(all);
 }
 
@@ -1230,7 +1235,7 @@ function startKitchenPoll(){
         const prev=kitchenOrders.find(p=>p.id===o.id);
         return !prev||prev.status!==o.status;
       });
-      if(changed) renderKitchenUI(orders);
+      if(changed||newIngresado.length>0) renderKitchenUI(orders);
     }
     kitchenOrders=orders;
   },5000);
