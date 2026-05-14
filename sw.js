@@ -1,8 +1,5 @@
-const CACHE = 'altura-cafe-v1';
+const CACHE = 'altura-cafe-v9';
 const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
   'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css',
   'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/fonts/tabler-icons.woff2'
 ];
@@ -24,16 +21,21 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Never cache index.html — always fetch fresh
+  if(e.request.url.includes('index.html') || e.request.mode === 'navigate'){
+    e.respondWith(fetch(e.request).catch(() => caches.match('./index.html')));
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(cached => {
-      if (cached) return cached;
+      if(cached) return cached;
       return fetch(e.request).then(res => {
-        if (res && res.status === 200 && e.request.method === 'GET') {
+        if(res && res.status === 200 && e.request.method === 'GET'){
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return res;
-      }).catch(() => caches.match('./index.html'));
+      });
     })
   );
 });
