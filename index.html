@@ -757,10 +757,7 @@ async function confirmOrder(){
   showLoad('Guardando orden...');
   try{
     await db.addSale(sale);
-    if(useCloud){
-      const{data}=await sb.from('ac_orders').insert([order]).select('id');
-      if(data&&data[0]) kitchenKnownIds.add(data[0].id);
-    }
+    if(useCloud) await sb.from('ac_orders').insert([order]);
   }catch(e){sale.id=L.nSale++;L.sales.push(sale);saveL();}
   hideLoad();cart=[];orderPayment='Efectivo';orderType='local';
   showToast(`<i class="ti ti-check" style="font-size:12px"></i> ¡Orden confirmada! Bs. ${tot}`);
@@ -1148,41 +1145,46 @@ async function kFinish(id){
 function startKitchenPoll(){
   if(kitchenPollTimer) clearInterval(kitchenPollTimer);
   if(kitchenSoundTimer) clearInterval(kitchenSoundTimer);
-  kitchenPollInitialized=false;
+
+  // Poll: fetch every 4s, always update UI if on kitchen page
+  // Track max ID seen so far to detect truly new orders
+  let maxKnownId=0;
 
   kitchenPollTimer=setInterval(async()=>{
     if(!useCloud)return;
     const orders=await fetchKitchenOrders();
-    if(!kitchenPollInitialized){
-      orders.forEach(o=>kitchenKnownIds.add(o.id));
-      kitchenOrders=orders;
-      kitchenPollInitialized=true;
-      if(activePage==='kitchen') renderKitchenUI(orders);
-      return;
+
+    // Detect new ingresado orders (higher ID than what we've seen)
+    const newIng=orders.filter(o=>o.status==='ingresado'&&o.id>maxKnownId);
+    if(orders.length>0){
+      const maxId=Math.max(...orders.map(o=>o.id));
+      if(maxKnownId===0){
+        // First run: set baseline, no alerts
+        maxKnownId=maxId;
+      } else if(newIng.length>0){
+        // New orders arrived
+        maxKnownId=maxId;
+        newIng.forEach(o=>kitchenRingingIds.add(o.id));
+        kitchenPendingCount=kitchenRingingIds.size;
+        showNotifBanner(kitchenPendingCount);
+        if(activePage!=='kitchen') updateKitchenBadge(kitchenPendingCount);
+      } else {
+        maxKnownId=Math.max(maxKnownId,maxId);
+      }
     }
-    const newOrders=orders.filter(o=>!kitchenKnownIds.has(o.id));
-    newOrders.forEach(o=>kitchenKnownIds.add(o.id));
-    const newIng=newOrders.filter(o=>o.status==='ingresado');
-    newIng.forEach(o=>kitchenRingingIds.add(o.id));
+
+    // Remove confirmed orders from ringing
     for(const id of [...kitchenRingingIds]){
       const o=orders.find(x=>x.id==id);
       if(!o||o.status!=='ingresado') kitchenRingingIds.delete(id);
     }
-    if(newIng.length>0){
-      kitchenPendingCount=kitchenRingingIds.size;
-      showNotifBanner(kitchenPendingCount);
-      if(activePage!=='kitchen') updateKitchenBadge(kitchenPendingCount);
-    }
-    if(activePage==='kitchen'){
-      const changed=orders.length!==kitchenOrders.length||orders.some(o=>{
-        const p=kitchenOrders.find(x=>x.id===o.id);return !p||p.status!==o.status;
-      });
-      if(changed||newIng.length>0) renderKitchenUI(orders);
-    }
-    kitchenOrders=orders;
-  },5000);
 
-  // Independent sound timer — pure JS, no network
+    // Always update kitchen UI if on that page
+    if(activePage==='kitchen') renderKitchenUI(orders);
+    kitchenOrders=orders;
+  },4000);
+
+  // Sound timer: independent 3s loop
   kitchenSoundTimer=setInterval(async()=>{
     if(!kitchenAudioUnlocked||kitchenRingingIds.size===0) return;
     try{
