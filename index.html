@@ -686,7 +686,7 @@ function optsHTML(compact){
         <button class="pay-opt ${orderPayment==='QR'?'on':''}" onclick="setPay('QR')"><i class="ti ti-qrcode"></i> QR</button>
       </div></div>
     </div>
-    <div><div class="opt-lbl">Comentarios</div><textarea class="comment-box" id="orderComment" rows="2" placeholder="Sin azúcar, extra caliente..."></textarea></div>`;
+    <div><div class="opt-lbl">Comentarios</div><textarea class="comment-box" id="orderComment" rows="2" placeholder="Sin azúcar, extra caliente..." oninput="window._savedComment=this.value">${_savedComment}</textarea></div>`;
   return`
     <div><div class="opt-lbl">Tipo de servicio</div><div class="toggle-row">
       <button class="tog ${orderType==='local'?'on':''}" onclick="setType('local')"><i class="ti ti-armchair"></i> Comer aquí</button>
@@ -696,7 +696,7 @@ function optsHTML(compact){
       <button class="pay-opt ${orderPayment==='Efectivo'?'on':''}" onclick="setPay('Efectivo')"><i class="ti ti-cash"></i> Efectivo</button>
       <button class="pay-opt ${orderPayment==='QR'?'on':''}" onclick="setPay('QR')"><i class="ti ti-qrcode"></i> QR</button>
     </div></div>
-    <div><div class="opt-lbl">Comentarios adicionales</div><textarea class="comment-box" id="orderComment" rows="2" placeholder="Sin azúcar, extra caliente..."></textarea></div>`;
+    <div><div class="opt-lbl">Comentarios adicionales</div><textarea class="comment-box" id="orderComment" rows="2" placeholder="Sin azúcar, extra caliente..." oninput="window._savedComment=this.value">${_savedComment}</textarea></div>`;
 }
 
 async function renderOrder(){
