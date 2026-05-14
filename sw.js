@@ -1,4 +1,4 @@
-const CACHE = 'altura-cafe-v9';
+const CACHE = 'altura-cafe-v10';
 const ASSETS = [
   'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css',
   'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/fonts/tabler-icons.woff2'
