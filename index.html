@@ -1146,43 +1146,51 @@ function startKitchenPoll(){
   if(kitchenPollTimer) clearInterval(kitchenPollTimer);
   if(kitchenSoundTimer) clearInterval(kitchenSoundTimer);
 
-  // Poll: fetch every 4s, always update UI if on kitchen page
-  // Track max ID seen so far to detect truly new orders
-  let maxKnownId=0;
+  let initialized=false;
+  let maxId=0;
 
-  kitchenPollTimer=setInterval(async()=>{
-    if(!useCloud)return;
-    const orders=await fetchKitchenOrders();
+  async function tick(){
+    if(!useCloud) return;
+    try{
+      const orders=await fetchKitchenOrders();
 
-    // Detect new ingresado orders (higher ID than what we've seen)
-    const newIng=orders.filter(o=>o.status==='ingresado'&&o.id>maxKnownId);
-    if(orders.length>0){
-      const maxId=Math.max(...orders.map(o=>o.id));
-      if(maxKnownId===0){
-        // First run: set baseline, no alerts
-        maxKnownId=maxId;
-      } else if(newIng.length>0){
-        // New orders arrived
-        maxKnownId=maxId;
-        newIng.forEach(o=>kitchenRingingIds.add(o.id));
-        kitchenPendingCount=kitchenRingingIds.size;
-        showNotifBanner(kitchenPendingCount);
-        if(activePage!=='kitchen') updateKitchenBadge(kitchenPendingCount);
-      } else {
-        maxKnownId=Math.max(maxKnownId,maxId);
+      if(!initialized){
+        initialized=true;
+        maxId=orders.length>0?Math.max(...orders.map(o=>Number(o.id))):0;
+        kitchenOrders=orders;
+        if(activePage==='kitchen') renderKitchenUI(orders);
+        return;
       }
-    }
 
-    // Remove confirmed orders from ringing
-    for(const id of [...kitchenRingingIds]){
-      const o=orders.find(x=>x.id==id);
-      if(!o||o.status!=='ingresado') kitchenRingingIds.delete(id);
-    }
+      // Find truly new orders
+      const newMax=orders.length>0?Math.max(...orders.map(o=>Number(o.id))):maxId;
+      if(newMax>maxId){
+        const newIng=orders.filter(o=>Number(o.id)>maxId&&o.status==='ingresado');
+        newIng.forEach(o=>kitchenRingingIds.add(o.id));
+        if(newIng.length>0){
+          kitchenPendingCount=kitchenRingingIds.size;
+          showNotifBanner(kitchenPendingCount);
+          updateKitchenBadge(kitchenPendingCount);
+        }
+        maxId=newMax;
+      }
 
-    // Always update kitchen UI if on that page
-    if(activePage==='kitchen') renderKitchenUI(orders);
-    kitchenOrders=orders;
-  },4000);
+      // Clean ringing set
+      for(const id of [...kitchenRingingIds]){
+        const o=orders.find(x=>x.id==id);
+        if(!o||o.status!=='ingresado') kitchenRingingIds.delete(id);
+      }
+
+      kitchenOrders=orders;
+      // Always refresh kitchen UI
+      if(activePage==='kitchen') renderKitchenUI(orders);
+
+    }catch(e){}
+  }
+
+  // Run immediately then every 3s
+  tick();
+  kitchenPollTimer=setInterval(tick,3000);
 
   // Sound timer: independent 3s loop
   kitchenSoundTimer=setInterval(async()=>{
