@@ -1070,7 +1070,8 @@ async function fetchKitchenOrders(){
 }
 
 async function renderKitchen(){
-  document.getElementById('kitchenInner').innerHTML='<div style="text-align:center;padding:2rem;color:#a08878">Cargando...</div>';
+  const el=document.getElementById('kitchenInner');
+  if(el) el.innerHTML='<div style="text-align:center;padding:2rem;color:#a08878">Cargando...</div>';
   const all=await fetchKitchenOrders();
   kitchenOrders=all;
   renderKitchenUI(all);
@@ -1110,7 +1111,9 @@ function renderKitchenUI(orders){
     ?`<button class="k-sound-btn" onclick="unlockAudio()" style="background:#EAF3DE;color:#27500A;border-color:#86C84A"><i class="ti ti-volume"></i> Sonido activo</button>`
     :`<button class="k-sound-btn" onclick="unlockAudio()"><i class="ti ti-volume-off"></i> Activar sonido</button>`;
 
-  document.getElementById('kitchenInner').innerHTML=`
+  const el=document.getElementById('kitchenInner');
+  if(!el) return;
+  el.innerHTML=`
     <div class="kitchen-header">
       <h1><i class="ti ti-chef-hat" style="font-size:22px;vertical-align:middle;margin-right:6px"></i>Cocina</h1>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">${soundBtn}
