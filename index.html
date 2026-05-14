@@ -253,7 +253,7 @@
     .k-tag.llevar{background:#fce7f3;color:#831843;}
     .k-tag.cash{background:#EAF3DE;color:#2d6011;}
     .k-tag.qr{background:#dbeafe;color:#1e40af;}
-    .k-comment{font-size:12px;color:#6b5744;background:var(--bg);border-radius:6px;padding:5px 8px;margin-bottom:10px;font-style:italic;}
+    .k-comment{font-size:13px;color:#92400E;background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-weight:700;display:flex;align-items:flex-start;gap:6px;}
     .k-cashier{font-size:11px;color:#a08878;margin-bottom:10px;}
     .btn-k{width:100%;padding:10px;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
     .btn-k.confirm{background:#F59E0B;color:#fff;}
@@ -1089,16 +1089,17 @@ function renderKitchenUI(orders){
     const items=o.items.map(i=>`<div class="k-item-row"><span class="k-qty">${i.qty}×</span><span>${i.name}</span></div>`).join('');
     const typeTag=o.type==='local'?`<span class="k-tag local">Local</span>`:`<span class="k-tag llevar">Para llevar</span>`;
     const payTag=o.payment==='QR'?`<span class="k-tag qr">QR</span>`:`<span class="k-tag cash">Efectivo</span>`;
-    const comment=o.comment?`<div class="k-comment">${o.comment}</div>`:'';
+    const comment=o.comment?`<div class="k-comment"><i class="ti ti-alert-triangle" style="font-size:15px;flex-shrink:0;margin-top:1px"></i><span>${o.comment}</span></div>`:'';
     const btn=o.status==='ingresado'
       ?`<button class="btn-k confirm" onclick="kConfirm('${o.id}')"><i class="ti ti-check"></i> Confirmar recepción</button>`
       :o.status==='preparacion'
       ?`<button class="btn-k finish" onclick="kFinish('${o.id}')"><i class="ti ti-checks"></i> Marcar como listo</button>`:'';
     return `<div class="k-card ${o.status}">
       <div class="k-card-top"><span class="k-order-num">#${o.id}</span><span class="k-time">${ts}</span></div>
+      ${comment}
       <div class="k-items">${items}</div>
       <div class="k-meta">${typeTag}${payTag}</div>
-      ${comment}<div class="k-cashier"><i class="ti ti-user" style="font-size:11px"></i> ${o.cashier}</div>
+      <div class="k-cashier"><i class="ti ti-user" style="font-size:11px"></i> ${o.cashier}</div>
       ${btn}</div>`;
   };
 
@@ -1131,7 +1132,7 @@ async function kConfirm(id){
   if(!useCloud)return;
   const{error}=await sb.from('ac_orders').update({status:'preparacion',confirmed_at:new Date().toISOString()}).eq('id',id);
   if(!error){
-    kitchenRingingIds.delete(parseInt(id));kitchenRingingIds.delete(id);
+    kitchenRingingIds.delete(String(id));
     if(kitchenRingingIds.size===0) updateKitchenBadge(0);
     showToast('<i class="ti ti-check"></i> Orden en preparación');
     renderKitchen();
@@ -1169,18 +1170,22 @@ function startKitchenPoll(){
       const newMax=orders.length>0?Math.max(...orders.map(o=>Number(o.id))):maxId;
       if(newMax>maxId){
         const newIng=orders.filter(o=>Number(o.id)>maxId&&o.status==='ingresado');
-        newIng.forEach(o=>kitchenRingingIds.add(o.id));
+        newIng.forEach(o=>kitchenRingingIds.add(String(o.id)));
         if(newIng.length>0){
           kitchenPendingCount=kitchenRingingIds.size;
           showNotifBanner(kitchenPendingCount);
           updateKitchenBadge(kitchenPendingCount);
+          // Play immediately on arrival
+          if(kitchenAudioUnlocked){
+            try{const ctx=getAudioCtx();if(ctx.state==='suspended')ctx.resume().then(()=>_doPlaySound(ctx)).catch(()=>{});else _doPlaySound(ctx);}catch(e){}
+          }
         }
         maxId=newMax;
       }
 
       // Clean ringing set
       for(const id of [...kitchenRingingIds]){
-        const o=orders.find(x=>x.id==id);
+        const o=orders.find(x=>String(x.id)===String(id));
         if(!o||o.status!=='ingresado') kitchenRingingIds.delete(id);
       }
 
@@ -1196,12 +1201,14 @@ function startKitchenPoll(){
   kitchenPollTimer=setInterval(tick,3000);
 
   // Sound timer: independent 3s loop
-  kitchenSoundTimer=setInterval(async()=>{
+  kitchenSoundTimer=setInterval(()=>{
     if(!kitchenAudioUnlocked||kitchenRingingIds.size===0) return;
+    // Create a fresh AudioContext each time to avoid suspension issues
     try{
       const ctx=getAudioCtx();
-      if(ctx.state==='suspended') await ctx.resume();
-      _doPlaySound(ctx);
+      const play=()=>_doPlaySound(ctx);
+      if(ctx.state==='suspended') ctx.resume().then(play).catch(()=>{});
+      else play();
     }catch(e){}
   },3000);
 }
