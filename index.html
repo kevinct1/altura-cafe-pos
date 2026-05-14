@@ -732,6 +732,9 @@ async function renderOrder(){
         </button>
       </div>
     </div>`;
+  // Restore comment text after re-render
+  const commentEl=document.getElementById('orderComment');
+  if(commentEl&&_savedComment) commentEl.value=_savedComment;
 }
 
 function addToCart(pid){
@@ -740,17 +743,21 @@ function addToCart(pid){
   if(ex)ex.qty++;else cart.push({...prod,qty:1});
   const card=document.getElementById('mc-'+pid);
   if(card){card.classList.add('pop');setTimeout(()=>card.classList.remove('pop'),300);}
-  renderOrder();
+  saveComment();renderOrder();
   showToast(`<i class="ti ti-plus" style="font-size:12px"></i> ${prod.name}`);
 }
-function chQty(pid,d){const i=cart.find(x=>x.id===pid);if(!i)return;i.qty+=d;if(i.qty<=0)cart=cart.filter(x=>x.id!==pid);renderOrder();}
-function rmItem(pid){cart=cart.filter(i=>i.id!==pid);renderOrder();}
-function setPay(m){orderPayment=m;renderOrder();}
-function setType(t){orderType=t;renderOrder();}
+function chQty(pid,d){const i=cart.find(x=>x.id===pid);if(!i)return;i.qty+=d;if(i.qty<=0)cart=cart.filter(x=>x.id!==pid);saveComment();renderOrder();}
+function rmItem(pid){cart=cart.filter(i=>i.id!==pid);saveComment();renderOrder();}
+function setPay(m){orderPayment=m;saveComment();renderOrder();}
+function setType(t){orderType=t;saveComment();renderOrder();}
+let _savedComment='';
+function saveComment(){const el=document.getElementById('orderComment');if(el)_savedComment=el.value;}
 
 async function confirmOrder(){
   if(!cart.length)return;
-  const comment=(document.getElementById('orderComment')||{value:''}).value;
+  saveComment();
+  const comment=_savedComment;
+  _savedComment='';
   const tot=cTot(),now=new Date();
   const sale={date:now.toISOString().slice(0,10),time:now.toTimeString().slice(0,5),items:cart.map(i=>({name:i.name,qty:i.qty,price:i.price})),total:tot,payment:orderPayment,type:orderType,comment,cashier:currentUser.name};
   const order={items:cart.map(i=>({name:i.name,qty:i.qty,price:i.price})),total:tot,payment:orderPayment,type:orderType,comment,cashier:currentUser.name,status:'ingresado'};
