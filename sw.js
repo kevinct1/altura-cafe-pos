@@ -1,41 +1,18 @@
-const CACHE = 'altura-cafe-v10';
-const ASSETS = [
-  'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css',
-  'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/fonts/tabler-icons.woff2'
-];
-
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(() => {})
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
-  );
+const CACHE='altura-cafe-v11';
+self.addEventListener('install',e=>{self.skipWaiting();});
+self.addEventListener('activate',e=>{
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
   self.clients.claim();
 });
-
-self.addEventListener('fetch', e => {
-  // Never cache index.html — always fetch fresh
-  if(e.request.url.includes('index.html') || e.request.mode === 'navigate'){
-    e.respondWith(fetch(e.request).catch(() => caches.match('./index.html')));
-    return;
+self.addEventListener('fetch',e=>{
+  if(e.request.mode==='navigate'||e.request.url.includes('index.html')){
+    e.respondWith(fetch(e.request).catch(()=>caches.match('./index.html')));return;
   }
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if(cached) return cached;
-      return fetch(e.request).then(res => {
-        if(res && res.status === 200 && e.request.method === 'GET'){
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
-        return res;
-      });
-    })
-  );
+  e.respondWith(caches.match(e.request).then(c=>{
+    if(c)return c;
+    return fetch(e.request).then(r=>{
+      if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}
+      return r;
+    });
+  }));
 });
