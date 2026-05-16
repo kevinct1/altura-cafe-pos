@@ -1110,11 +1110,18 @@ async function fetchOrders(){
 
 // ── RENDER ──
 function renderKitchen(){
+  // Force immediate poll tick
+  if(!useCloud){return;}
   var el=document.getElementById('kitchenInner');
-  if(!el) return;
-  el.innerHTML='<div style="text-align:center;padding:2rem;color:#a08878">Cargando...</div>';
+  if(el) el.innerHTML='<div style="text-align:center;padding:2rem;color:#a08878">Cargando...</div>';
   fetchOrders().then(function(orders){
     kitchenOrders=orders;
+    // Update maxId so poll knows current state
+    if(orders.length>0){
+      var max=Math.max.apply(null,orders.map(function(o){return Number(o.id);}));
+      if(max>kitchenMaxId) kitchenMaxId=max;
+    }
+    kitchenInitialized=true;
     drawKitchen(orders);
   });
 }
@@ -1234,7 +1241,7 @@ function startKitchenPoll(){
 
     kitchenOrders=orders;
     if(activePage==='kitchen') drawKitchen(orders);
-  },4000);
+  },3000);
 }
 </script>
 </body></html>
