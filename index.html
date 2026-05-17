@@ -722,9 +722,11 @@ function setType(t){orderType=t;renderOrder();}
 var orderCommentText='';
 async function confirmOrder(){
   if(!cart.length)return;
-  // Read from DOM first, fallback to global var
-  var _el=document.getElementById('orderComment');
-  const comment=(_el&&_el.value)||orderCommentText;
+  // Read from any visible textarea or global var
+  var els=document.querySelectorAll('#orderComment');
+  var domVal='';
+  els.forEach(function(el){if(el.value) domVal=el.value;});
+  const comment=domVal||orderCommentText;
   const tot=cTot(),now=new Date();
   const sale={date:now.toISOString().slice(0,10),time:now.toTimeString().slice(0,5),items:cart.map(i=>({name:i.name,qty:i.qty,price:i.price})),total:tot,payment:orderPayment,type:orderType,comment,cashier:currentUser.name};
   showLoad('Guardando orden...');
