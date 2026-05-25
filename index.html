@@ -387,7 +387,7 @@ INSERT INTO ac_products (name,category,price) VALUES
 <!-- APP -->
 <div id="appShell">
   <div class="topbar">
-    <div class="topbar-brand"><i class="ti ti-coffee"></i><span>Altura Café</span></div>
+    <div class="topbar-brand"><i class="ti ti-coffee"></i><span>Altura Café</span><span style="font-size:10px;opacity:.5;margin-left:6px;font-weight:400">v2.2-debug</span></div>
     <div class="topbar-r">
       <div class="user-pill">
         <div class="av" id="uAv"></div>
@@ -722,11 +722,11 @@ function setType(t){orderType=t;renderOrder();}
 var orderCommentText='';
 async function confirmOrder(){
   if(!cart.length)return;
-  // Read from any visible textarea or global var
   var els=document.querySelectorAll('#orderComment');
   var domVal='';
   els.forEach(function(el){if(el.value) domVal=el.value;});
   const comment=domVal||orderCommentText;
+  alert('DEBUG comment: [' + comment + '] domVal:[' + domVal + '] global:[' + orderCommentText + ']');
   const tot=cTot(),now=new Date();
   const sale={date:now.toISOString().slice(0,10),time:now.toTimeString().slice(0,5),items:cart.map(i=>({name:i.name,qty:i.qty,price:i.price})),total:tot,payment:orderPayment,type:orderType,comment,cashier:currentUser.name};
   showLoad('Guardando orden...');
