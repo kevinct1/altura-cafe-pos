@@ -387,7 +387,7 @@ INSERT INTO ac_products (name,category,price) VALUES
 <!-- APP -->
 <div id="appShell">
   <div class="topbar">
-    <div class="topbar-brand"><i class="ti ti-coffee"></i><span>Altura Café</span><span style="font-size:10px;opacity:.5;margin-left:6px;font-weight:400">v2.2-debug</span></div>
+    <div class="topbar-brand"><i class="ti ti-coffee"></i><span>Altura Café</span><span style="font-size:10px;opacity:.6;margin-left:6px;font-weight:400;color:var(--cream)">v3.0</span></div>
     <div class="topbar-r">
       <div class="user-pill">
         <div class="av" id="uAv"></div>
@@ -498,9 +498,9 @@ const db={
 // ════════════════════════════════════════
 //  SETUP
 // ════════════════════════════════════════
-function init(){ tryConnect('https://hdxfuwtdmccsrwibqvyk.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGZ1d3RkbWNjc3J3aWJxdnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyOTE5ODUsImV4cCI6MjA5Mzg2Nzk4NX0.M2Zc56L9DbkE0ZheTQYIEvd686u_Ou0sRdKiMGLqiN4'); }
-function getCfg(){return null;}
-function saveCfg(){}
+function init(){tryConnect('https://hdxfuwtdmccsrwibqvyk.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkeGZ1d3RkbWNjc3J3aWJxdnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyOTE5ODUsImV4cCI6MjA5Mzg2Nzk4NX0.M2Zc56L9DbkE0ZheTQYIEvd686u_Ou0sRdKiMGLqiN4');}
+function getCfg(){try{const s=localStorage.getItem('acCfg');return s?JSON.parse(s):null;}catch(e){return null;}}
+function saveCfg(u,k){localStorage.setItem('acCfg',JSON.stringify({url:u,key:k}));}
 
 async function tryConnect(url,key){
   showLoad('Conectando con Supabase...');
@@ -511,8 +511,8 @@ async function tryConnect(url,key){
     useCloud=true;hideLoad();showLogin(true);
   }catch(e){
     hideLoad();
-    if(getCfg()){useCloud=false;showLogin(false);}
-    else{useCloud=false;showLogin(false);}
+    useCloud=false;showLogin(false);
+    
   }
 }
 async function connectSB(){
@@ -524,8 +524,8 @@ async function connectSB(){
   await tryConnect(url,key);
   document.getElementById('connectBtn').disabled=false;
 }
-function skipSetup(){useCloud=false;document.getElementById('setupScreen').style.display='none';showLogin(false);}
-function resetSetup(){}
+function skipSetup(){useCloud=false;localStorage.removeItem('acCfg');document.getElementById('setupScreen').style.display='none';showLogin(false);}
+function resetSetup(){localStorage.removeItem('acCfg');document.getElementById('loginScreen').style.display='none';document.getElementById('setupScreen').style.display='flex';}
 
 function showLogin(online){
   document.getElementById('setupScreen').style.display='none';
@@ -571,7 +571,7 @@ async function doLogin(){
     dot.className='sync-dot '+(useCloud?'on':'off');
     dot.title=useCloud?'Conectado a Supabase':'Modo local';
     buildNav();showPage('order');
-    if(useCloud) startKitchenPoll();
+    if(useCloud)startKitchenPoll();
   }catch(e){hideLoad();document.getElementById('loginErr').textContent='Error de conexión. Intenta de nuevo.';}
 }
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -657,7 +657,7 @@ function optsHTML(compact){
         <button class="pay-opt ${orderPayment==='QR'?'on':''}" onclick="setPay('QR')"><i class="ti ti-qrcode"></i> QR</button>
       </div></div>
     </div>
-    <div><div class="opt-lbl">Comentarios</div><textarea class="comment-box" id="orderComment" rows="2" placeholder="Sin azúcar, extra caliente..." oninput="orderCommentText=this.value">${orderCommentText}</textarea></div>`;
+    <div><div class="opt-lbl">Comentarios</div><textarea class="comment-box" id="orderComment" rows="2" placeholder="Sin azúcar, extra caliente..." oninput="window._kComment=this.value"></textarea></div>`;
   return`
     <div><div class="opt-lbl">Tipo de servicio</div><div class="toggle-row">
       <button class="tog ${orderType==='local'?'on':''}" onclick="setType('local')"><i class="ti ti-armchair"></i> Comer aquí</button>
@@ -667,7 +667,7 @@ function optsHTML(compact){
       <button class="pay-opt ${orderPayment==='Efectivo'?'on':''}" onclick="setPay('Efectivo')"><i class="ti ti-cash"></i> Efectivo</button>
       <button class="pay-opt ${orderPayment==='QR'?'on':''}" onclick="setPay('QR')"><i class="ti ti-qrcode"></i> QR</button>
     </div></div>
-    <div><div class="opt-lbl">Comentarios adicionales</div><textarea class="comment-box" id="orderComment" rows="2" placeholder="Sin azúcar, extra caliente..." oninput="orderCommentText=this.value">${orderCommentText}</textarea></div>`;
+    <div><div class="opt-lbl">Comentarios adicionales</div><textarea class="comment-box" id="orderComment" rows="2" placeholder="Sin azúcar, extra caliente..." oninput="window._kComment=this.value"></textarea></div>`;
 }
 
 async function renderOrder(){
@@ -719,22 +719,21 @@ function rmItem(pid){cart=cart.filter(i=>i.id!==pid);renderOrder();}
 function setPay(m){orderPayment=m;renderOrder();}
 function setType(t){orderType=t;renderOrder();}
 
-var orderCommentText='';
 async function confirmOrder(){
   if(!cart.length)return;
-  var els=document.querySelectorAll('#orderComment');
-  var domVal='';
-  els.forEach(function(el){if(el.value) domVal=el.value;});
-  const comment=domVal||orderCommentText;
-  alert('DEBUG comment: [' + comment + '] domVal:[' + domVal + '] global:[' + orderCommentText + ']');
+  const comment=window._kComment||'';
   const tot=cTot(),now=new Date();
   const sale={date:now.toISOString().slice(0,10),time:now.toTimeString().slice(0,5),items:cart.map(i=>({name:i.name,qty:i.qty,price:i.price})),total:tot,payment:orderPayment,type:orderType,comment,cashier:currentUser.name};
   showLoad('Guardando orden...');
   try{
     await db.addSale(sale);
-    if(useCloud) await sb.from('ac_orders').insert([{items:sale.items,total:sale.total,payment:sale.payment,type:sale.type,comment:sale.comment,cashier:sale.cashier,status:'ingresado'}]);
+    if(useCloud){
+      var ord={items:sale.items,total:sale.total,payment:sale.payment,
+               type:sale.type,comment:sale.comment,cashier:sale.cashier,status:'ingresado'};
+      await sb.from('ac_orders').insert([ord]);
+    }
   }catch(e){sale.id=L.nSale++;L.sales.push(sale);saveL();}
-  hideLoad();cart=[];orderPayment='Efectivo';orderType='local';orderCommentText='';
+  hideLoad();cart=[];orderPayment='Efectivo';orderType='local';window._kComment='';
   showToast(`<i class="ti ti-check" style="font-size:12px"></i> ¡Orden confirmada! Bs. ${tot}`);
   renderOrder();
 }
@@ -982,25 +981,23 @@ window.addEventListener('beforeinstallprompt',e=>{
 init();
 </script>
 
-
-<!-- KITCHEN CSS + JS injected -->
 <style>
-.k-nav-badge{position:absolute;top:2px;right:2px;background:#EF4444;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;border:2px solid #f4f0eb;}
+.k-nav-badge{position:absolute;top:2px;right:2px;background:#EF4444;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;}
 .kitchen-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;}
 .kitchen-header h1{font-size:20px;font-weight:800;color:#3C2415;margin:0;}
 .k-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
 @media(max-width:700px){.k-cols{grid-template-columns:1fr;}}
-.k-col-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;padding:8px 12px;border-radius:10px 10px 0 0;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.k-col-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:8px 12px;border-radius:10px 10px 0 0;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
 .k-col-title.ingresado{background:#FEF3C7;color:#92400E;}
 .k-col-title.preparacion{background:#DBEAFE;color:#1E40AF;}
 .k-col-title.finalizado{background:#D1FAE5;color:#065F46;}
-.k-badge{background:rgba(0,0,0,.12);color:inherit;border-radius:99px;font-size:10px;padding:1px 7px;font-weight:800;}
+.k-badge{background:rgba(0,0,0,.15);border-radius:99px;font-size:10px;padding:1px 7px;font-weight:800;}
 .k-card{background:#fff;border:2px solid #e2d5c4;border-radius:14px;padding:14px;margin-bottom:10px;}
 .k-card.ingresado{border-color:#F59E0B;animation:kPulse 2s infinite;}
 .k-card.preparacion{border-color:#3B82F6;}
 .k-card.finalizado{border-color:#10B981;opacity:.75;}
 @keyframes kPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.4)}50%{box-shadow:0 0 0 6px rgba(245,158,11,0)}}
-.k-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.k-card-top{display:flex;justify-content:space-between;margin-bottom:8px;}
 .k-order-num{font-size:14px;font-weight:800;color:#3C2415;}
 .k-time{font-size:11px;color:#a08878;font-weight:600;}
 .k-comment{font-size:13px;font-weight:700;color:#92400E;background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:8px;padding:8px 10px;margin-bottom:10px;display:flex;align-items:flex-start;gap:6px;}
@@ -1019,125 +1016,95 @@ init();
 .btn-k.finish{background:#10B981;color:#fff;}
 .k-empty{text-align:center;padding:2rem 0;color:#b09a88;font-size:13px;}
 .k-empty i{font-size:28px;display:block;margin-bottom:6px;}
-.notif-banner{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#F59E0B;color:#fff;padding:10px 22px;border-radius:99px;font-size:14px;font-weight:800;z-index:500;display:none;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.25);}
+.k-notif-banner{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#F59E0B;color:#fff;padding:10px 22px;border-radius:99px;font-size:14px;font-weight:800;z-index:500;display:none;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.25);}
 .k-sound-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1.5px solid #F59E0B;border-radius:10px;background:#FEF3C7;font-size:12px;font-weight:700;color:#92400E;cursor:pointer;}
-.k-sound-btn.active{background:#EAF3DE;color:#27500A;border-color:#86C84A;}
-.k-refresh{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1.5px solid #e2d5c4;border-radius:10px;background:transparent;font-size:12px;font-weight:700;color:#6b5744;cursor:pointer;}
+.k-sound-btn.on{background:#EAF3DE;color:#27500A;border-color:#86C84A;}
+.k-refresh-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1.5px solid #e2d5c4;border-radius:10px;background:transparent;font-size:12px;font-weight:700;color:#6b5744;cursor:pointer;}
 </style>
 
+<div id="kNotifBanner" class="k-notif-banner"></div>
+
 <script>
-// ═══════════════════════════════
-//  KITCHEN MODULE
-// ═══════════════════════════════
-var kitchenPollTimer=null;
-var kitchenSoundTimer=null;
-var kitchenAudioUnlocked=false;
-var kitchenRingingIds=[];
-var kitchenAudio=null;
-var kitchenMaxId=0;
-var kitchenInitialized=false;
-var kitchenOrders=[];
+// ═══════════════════════════════════════════
+//  KITCHEN v3.0
+// ═══════════════════════════════════════════
+var _kPollTimer=null;
+var _kSoundTimer=null;
+var _kMaxId=0;
+var _kReady=false;
+var _kRinging=false;
+var _kAudioOn=false;
+var _kOrders=[];
 
-// ── AUDIO ──
-function unlockAudio(){
-  kitchenAudioUnlocked=true;
+// ── Audio ──────────────────────────────────
+function kUnlockAudio(){
+  _kAudioOn=true;
   localStorage.setItem('kAudio','1');
-  var btn=document.getElementById('kSoundBtn');
-  if(btn){btn.className='k-sound-btn active';btn.innerHTML='<i class="ti ti-volume"></i> Sonido activo';}
-  // Test beep
-  playKitchenBeep();
+  kBeep();
+  var b=document.getElementById('kSoundBtn');
+  if(b){b.className='k-sound-btn on';b.innerHTML='<i class="ti ti-volume"></i> Sonido activo';}
 }
-
-function playKitchenBeep(){
-  if(!kitchenAudioUnlocked) return;
+function kBeep(){
+  if(!_kAudioOn)return;
   try{
     var ctx=new(window.AudioContext||window.webkitAudioContext)();
-    var notes=[523,659,784,1046];
-    notes.forEach(function(freq,i){
-      var o=ctx.createOscillator();
-      var g=ctx.createGain();
+    [523,659,784,1046].forEach(function(f,i){
+      var o=ctx.createOscillator(),g=ctx.createGain();
       o.connect(g);g.connect(ctx.destination);
-      o.frequency.value=freq;o.type='sine';
-      g.gain.setValueAtTime(0,ctx.currentTime+i*0.2);
-      g.gain.linearRampToValueAtTime(0.4,ctx.currentTime+i*0.2+0.06);
-      g.gain.linearRampToValueAtTime(0,ctx.currentTime+i*0.2+0.32);
-      o.start(ctx.currentTime+i*0.2);
-      o.stop(ctx.currentTime+i*0.2+0.35);
+      o.frequency.value=f;o.type='sine';
+      g.gain.setValueAtTime(0,ctx.currentTime+i*.2);
+      g.gain.linearRampToValueAtTime(.4,ctx.currentTime+i*.2+.06);
+      g.gain.linearRampToValueAtTime(0,ctx.currentTime+i*.2+.32);
+      o.start(ctx.currentTime+i*.2);o.stop(ctx.currentTime+i*.2+.36);
     });
   }catch(e){}
 }
-
-function startRinging(){
-  stopRinging();
-  if(!kitchenAudioUnlocked) return;
-  playKitchenBeep();
-  kitchenSoundTimer=setInterval(function(){
-    if(kitchenRingingIds.length===0){stopRinging();return;}
-    playKitchenBeep();
-  },4000);
+function kStartRinging(){
+  if(_kSoundTimer)return;
+  kBeep();
+  _kSoundTimer=setInterval(kBeep,4000);
+}
+function kStopRinging(){
+  if(_kSoundTimer){clearInterval(_kSoundTimer);_kSoundTimer=null;}
+  _kRinging=false;
 }
 
-function stopRinging(){
-  if(kitchenSoundTimer){clearInterval(kitchenSoundTimer);kitchenSoundTimer=null;}
-}
-
-// ── BANNER ──
-function showKitchenBanner(n){
-  var b=document.getElementById('kBanner');
-  if(!b){b=document.createElement('div');b.id='kBanner';b.className='notif-banner';document.body.appendChild(b);}
-  b.innerHTML='<i class="ti ti-bell-ringing"></i> '+n+' orden'+(n>1?'es':'')+' nueva'+(n>1?'s':'')+' en cocina';
+// ── Banner ─────────────────────────────────
+function kBanner(n){
+  var b=document.getElementById('kNotifBanner');
+  if(!b)return;
+  b.innerHTML='<i class="ti ti-bell-ringing"></i> '+n+' orden'+(n>1?'es':'')+' nueva'+(n>1?'s':'');
   b.style.display='flex';
   clearTimeout(b._t);b._t=setTimeout(function(){b.style.display='none';},5000);
 }
-
-function updateKBadge(n){
+function kBadge(n){
   document.querySelectorAll('.bnav-item,.nav-item').forEach(function(btn){
-    if(btn.querySelector('.ti-chef-hat')){
-      btn.style.position='relative';
-      var badge=btn.querySelector('.k-nav-badge');
-      if(n>0){
-        if(!badge){badge=document.createElement('span');badge.className='k-nav-badge';btn.appendChild(badge);}
-        badge.textContent=n;
-      }else if(badge) badge.remove();
-    }
+    if(!btn.querySelector('.ti-chef-hat'))return;
+    btn.style.position='relative';
+    var badge=btn.querySelector('.k-nav-badge');
+    if(n>0){
+      if(!badge){badge=document.createElement('span');badge.className='k-nav-badge';btn.appendChild(badge);}
+      badge.textContent=n;
+    }else if(badge)badge.remove();
   });
 }
 
-// ── FETCH ──
-async function fetchOrders(){
-  if(!useCloud) return [];
+// ── Fetch & Draw ───────────────────────────
+async function kFetch(){
+  if(!useCloud)return[];
   try{
-    var res=await sb.from('ac_orders').select('*').order('created_at',{ascending:false}).limit(60);
-    return res.data||[];
-  }catch(e){return [];}
+    var r=await sb.from('ac_orders').select('*').order('created_at',{ascending:false}).limit(60);
+    return r.data||[];
+  }catch(e){return[];}
 }
 
-// ── RENDER ──
-function renderKitchen(){
-  // Force immediate poll tick
-  if(!useCloud){return;}
+function kDraw(orders){
   var el=document.getElementById('kitchenInner');
-  if(el) el.innerHTML='<div style="text-align:center;padding:2rem;color:#a08878">Cargando...</div>';
-  fetchOrders().then(function(orders){
-    kitchenOrders=orders;
-    // Update maxId so poll knows current state
-    if(orders.length>0){
-      var max=Math.max.apply(null,orders.map(function(o){return Number(o.id);}));
-      if(max>kitchenMaxId) kitchenMaxId=max;
-    }
-    kitchenInitialized=true;
-    drawKitchen(orders);
-  });
-}
-
-function drawKitchen(orders){
-  var el=document.getElementById('kitchenInner');
-  if(!el) return;
-
-  var unlocked=kitchenAudioUnlocked;
-  var soundBtn=unlocked
-    ? '<button id="kSoundBtn" class="k-sound-btn active" onclick="unlockAudio()"><i class="ti ti-volume"></i> Sonido activo</button>'
-    : '<button id="kSoundBtn" class="k-sound-btn" onclick="unlockAudio()"><i class="ti ti-volume-off"></i> Activar sonido</button>';
+  if(!el)return;
+  var on=_kAudioOn;
+  var sBtn=on
+    ?'<button id="kSoundBtn" class="k-sound-btn on" onclick="kUnlockAudio()"><i class="ti ti-volume"></i> Sonido activo</button>'
+    :'<button id="kSoundBtn" class="k-sound-btn" onclick="kUnlockAudio()"><i class="ti ti-volume-off"></i> Activar sonido</button>';
 
   var ing=orders.filter(function(o){return o.status==='ingresado';});
   var prep=orders.filter(function(o){return o.status==='preparacion';});
@@ -1146,37 +1113,36 @@ function drawKitchen(orders){
   function card(o){
     var t=new Date(o.created_at);
     var ts=t.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
-    var itemsHtml=o.items.map(function(i){
+    var items=(o.items||[]).map(function(i){
       return '<div class="k-item-row"><span class="k-qty">'+i.qty+'×</span><span>'+i.name+'</span></div>';
     }).join('');
-    var commentHtml=o.comment?'<div class="k-comment"><i class="ti ti-alert-triangle" style="font-size:15px;flex-shrink:0"></i><span>'+o.comment+'</span></div>':'';
-    var typeTag=o.type==='local'?'<span class="k-tag local">Local</span>':'<span class="k-tag llevar">Para llevar</span>';
-    var payTag=o.payment==='QR'?'<span class="k-tag qr">QR</span>':'<span class="k-tag cash">Efectivo</span>';
+    var cmt=o.comment?'<div class="k-comment"><i class="ti ti-alert-triangle" style="font-size:15px;flex-shrink:0;margin-top:1px"></i><span>'+o.comment+'</span></div>':'';
+    var tTag=o.type==='local'?'<span class="k-tag local">Local</span>':'<span class="k-tag llevar">Para llevar</span>';
+    var pTag=o.payment==='QR'?'<span class="k-tag qr">QR</span>':'<span class="k-tag cash">Efectivo</span>';
     var btn=o.status==='ingresado'
-      ? '<button class="btn-k confirm" onclick="kConfirm('+o.id+')"><i class="ti ti-check"></i> Confirmar recepción</button>'
-      : o.status==='preparacion'
-      ? '<button class="btn-k finish" onclick="kFinish('+o.id+')"><i class="ti ti-checks"></i> Marcar como listo</button>'
-      : '';
+      ?'<button class="btn-k confirm" onclick="kConfirm('+o.id+')"><i class="ti ti-check"></i> Confirmar recepción</button>'
+      :o.status==='preparacion'
+      ?'<button class="btn-k finish" onclick="kFinish('+o.id+')"><i class="ti ti-checks"></i> Marcar como listo</button>'
+      :'';
     return '<div class="k-card '+o.status+'">'
       +'<div class="k-card-top"><span class="k-order-num">#'+o.id+'</span><span class="k-time">'+ts+'</span></div>'
-      +commentHtml
-      +'<div class="k-items">'+itemsHtml+'</div>'
-      +'<div class="k-meta">'+typeTag+payTag+'</div>'
+      +cmt
+      +'<div class="k-items">'+items+'</div>'
+      +'<div class="k-meta">'+tTag+pTag+'</div>'
       +'<div class="k-cashier"><i class="ti ti-user" style="font-size:11px"></i> '+o.cashier+'</div>'
       +btn+'</div>';
   }
-
   function col(title,cls,icon,items){
-    return '<div>'
-      +'<div class="k-col-title '+cls+'"><i class="ti '+icon+'"></i>'+title+'<span class="k-badge">'+items.length+'</span></div>'
+    return '<div><div class="k-col-title '+cls+'"><i class="ti '+icon+'"></i>'+title
+      +'<span class="k-badge">'+items.length+'</span></div>'
       +(items.length?items.map(card).join(''):'<div class="k-empty"><i class="ti ti-circle-check"></i>Sin órdenes</div>')
       +'</div>';
   }
 
   el.innerHTML='<div class="kitchen-header">'
     +'<h1><i class="ti ti-chef-hat" style="font-size:22px;vertical-align:middle;margin-right:6px"></i>Cocina</h1>'
-    +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'+soundBtn
-    +'<button class="k-refresh" onclick="renderKitchen()"><i class="ti ti-refresh"></i> Actualizar</button>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'+sBtn
+    +'<button class="k-refresh-btn" onclick="renderKitchen()"><i class="ti ti-refresh"></i> Actualizar</button>'
     +'</div></div>'
     +'<div class="k-cols">'
     +col('Ingresado','ingresado','ti-clock-hour4',ing)
@@ -1185,67 +1151,78 @@ function drawKitchen(orders){
     +'</div>';
 }
 
-// ── ACTIONS ──
-async function kConfirm(id){
-  if(!useCloud) return;
-  var res=await sb.from('ac_orders').update({status:'preparacion',confirmed_at:new Date().toISOString()}).eq('id',id);
-  if(!res.error){
-    kitchenRingingIds=kitchenRingingIds.filter(function(x){return x!=id;});
-    if(kitchenRingingIds.length===0){stopRinging();updateKBadge(0);}
-    showToast('<i class="ti ti-check"></i> En preparación');
-    renderKitchen();
+// ── renderKitchen (called by showPage) ─────
+async function renderKitchen(){
+  var el=document.getElementById('kitchenInner');
+  if(el)el.innerHTML='<div style="text-align:center;padding:2rem;color:#a08878">Cargando...</div>';
+  var orders=await kFetch();
+  _kOrders=orders;
+  // Sync maxId so poll doesn't re-alert existing orders
+  if(orders.length>0){
+    var mx=Math.max.apply(null,orders.map(function(o){return Number(o.id);}));
+    if(mx>_kMaxId)_kMaxId=mx;
   }
+  kDraw(orders);
 }
 
+// ── Actions ────────────────────────────────
+async function kConfirm(id){
+  if(!useCloud)return;
+  await sb.from('ac_orders').update({status:'preparacion',confirmed_at:new Date().toISOString()}).eq('id',id);
+  // Check if any ingresado remain
+  var r=await sb.from('ac_orders').select('id').eq('status','ingresado');
+  if(!r.data||r.data.length===0)kStopRinging();
+  showToast('<i class="ti ti-check"></i> En preparación');
+  renderKitchen();
+}
 async function kFinish(id){
-  if(!useCloud) return;
-  var res=await sb.from('ac_orders').update({status:'finalizado',finished_at:new Date().toISOString()}).eq('id',id);
-  if(!res.error){showToast('<i class="ti ti-checks"></i> Finalizado');renderKitchen();}
+  if(!useCloud)return;
+  await sb.from('ac_orders').update({status:'finalizado',finished_at:new Date().toISOString()}).eq('id',id);
+  showToast('<i class="ti ti-checks"></i> Finalizado');
+  renderKitchen();
 }
 
-// ── POLL ──
+// ── Poll ───────────────────────────────────
 function startKitchenPoll(){
-  if(kitchenPollTimer) clearInterval(kitchenPollTimer);
-  kitchenInitialized=false;
-  kitchenMaxId=0;
+  if(_kPollTimer)clearInterval(_kPollTimer);
+  _kReady=false;
+  _kMaxId=0;
+  if(localStorage.getItem('kAudio')==='1')_kAudioOn=true;
 
-  if(localStorage.getItem('kAudio')==='1') kitchenAudioUnlocked=true;
-
-  kitchenPollTimer=setInterval(async function(){
-    if(!useCloud) return;
-    var orders=await fetchOrders();
-
-    if(!kitchenInitialized){
-      kitchenInitialized=true;
-      if(orders.length>0) kitchenMaxId=Math.max.apply(null,orders.map(function(o){return Number(o.id);}));
-      kitchenOrders=orders;
-      if(activePage==='kitchen') drawKitchen(orders);
+  _kPollTimer=setInterval(async function(){
+    if(!useCloud)return;
+    var orders=await kFetch();
+    
+    if(!_kReady){
+      _kReady=true;
+      if(orders.length>0)_kMaxId=Math.max.apply(null,orders.map(function(o){return Number(o.id);}));
+      _kOrders=orders;
+      if(activePage==='kitchen')kDraw(orders);
       return;
     }
 
-    var currentMax=orders.length>0?Math.max.apply(null,orders.map(function(o){return Number(o.id);})):kitchenMaxId;
-    var newIng=orders.filter(function(o){return Number(o.id)>kitchenMaxId && o.status==='ingresado';});
-
+    var newMax=orders.length>0?Math.max.apply(null,orders.map(function(o){return Number(o.id);})):_kMaxId;
+    var newIng=orders.filter(function(o){return Number(o.id)>_kMaxId&&o.status==='ingresado';});
+    
     if(newIng.length>0){
-      kitchenMaxId=currentMax;
-      newIng.forEach(function(o){kitchenRingingIds.push(o.id);});
-      showKitchenBanner(kitchenRingingIds.length);
-      updateKBadge(kitchenRingingIds.length);
-      startRinging();
-    } else {
-      if(currentMax>kitchenMaxId) kitchenMaxId=currentMax;
+      _kMaxId=newMax;
+      _kRinging=true;
+      kBanner(newIng.length);
+      kBadge(newIng.length);
+      kStartRinging();
+    }else if(newMax>_kMaxId){
+      _kMaxId=newMax;
     }
 
-    // Remove confirmed from ringing
-    kitchenRingingIds=kitchenRingingIds.filter(function(id){
-      var o=orders.find(function(x){return x.id==id;});
-      return o && o.status==='ingresado';
-    });
-    if(kitchenRingingIds.length===0) stopRinging();
+    // Stop ringing if no more ingresado
+    var hasIng=orders.some(function(o){return o.status==='ingresado';});
+    if(!hasIng&&_kRinging)kStopRinging();
 
-    kitchenOrders=orders;
-    if(activePage==='kitchen') drawKitchen(orders);
+    _kOrders=orders;
+    if(activePage==='kitchen')kDraw(orders);
   },3000);
 }
 </script>
-</body></html>
+
+</body>
+</html>
